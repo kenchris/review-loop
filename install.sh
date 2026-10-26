@@ -13,9 +13,12 @@
 #   ./install.sh --no-path           never touch the PATH or a shell profile (the default asks, in a terminal, when the folder is not on it)
 #   ./install.sh --uninstall         remove what this script installed (same options select where)
 #
-# Needs bash and git (written to avoid bash 4 features; tested on bash 5). On Windows, use Git Bash.
+# Needs bash and git (written to avoid bash 4 features; tested on bash 5). On Windows, run install.cmd (PowerShell or cmd) or use Git Bash; WSL installs into the Linux home.
 set -eu
 here="$(cd "$(dirname "$0")" && pwd)"
+if grep -qi microsoft /proc/version 2>/dev/null; then
+  echo "warning: this is WSL (Linux): it installs into $HOME, not your Windows profile. For PowerShell or VS Code on Windows run .\\install.cmd from PowerShell or cmd instead." >&2
+fi
 link=0; project=""; bindir="$HOME/.local/bin"; want_bin=1; uninstall=0; target="claude"; add_path=ask
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -99,8 +102,8 @@ if [ "$want_bin" -eq 1 ]; then
   echo "command  $bindir/review-loop"
   case "$(uname -s 2>/dev/null)" in
     MINGW*|MSYS*|CYGWIN*)
-      printf '@echo off\r\nbash "%%~dp0review-loop" %%*\r\n' > "$bindir/review-loop.cmd"
-      echo "command  $bindir/review-loop.cmd (for cmd.exe and PowerShell; needs bash on the PATH)" ;;
+      cp "$here/bin/review-loop.cmd" "$bindir/review-loop.cmd"
+      echo "command  $bindir/review-loop.cmd (for cmd.exe and PowerShell; uses the bash of Git for Windows, not WSL's)" ;;
   esac
   case ":$PATH:" in
     *":$bindir:"*) ;;

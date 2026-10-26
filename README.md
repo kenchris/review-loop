@@ -33,7 +33,9 @@ More are planned, see [PLAN.md](PLAN.md).
     ./install.sh --for all    # also ~/.copilot/skills
     ./install.sh --project .  # into a project's .claude/skills (and .github/skills with --for all), shared through its repository
 
-Needs bash and git (written to avoid bash 4 features, tested on bash 5 only); on Windows use Git Bash (the installer adds a `review-loop.cmd` for cmd.exe and PowerShell). `./install.sh --uninstall` removes what it installed.
+Needs bash and git (written to avoid bash 4 features, tested on bash 5 only). `./install.sh --uninstall` removes what it installed.
+
+**Windows (PowerShell or cmd):** run `.\install.cmd --for all --add-to-path` (keep the `.\`: another `install.cmd` on your PATH may win without it). Do not run `./install.sh` in PowerShell (Windows opens the file in an editor), and do not run `bash install.sh` when `bash` is WSL's: that installs into the Linux home. `install.cmd` finds the bash of Git for Windows through `git`, not through the PATH, and the `review-loop.cmd` it installs does the same, so `review-loop` works in PowerShell, cmd and VS Code's terminal. Git Bash users can run `./install.sh` as on Linux.
 
 `install.sh` does not edit your shell profile or PATH. It prints a note when `~/.local/bin` (where the `review-loop` launcher goes) is not on the PATH. Add it once yourself: in Git Bash `echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc`; in PowerShell `[Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:USERPROFILE/.local/bin", "User")` (then open a new terminal). The scripts that need a repository's own files (`REVIEW_LOOP_CONFIG`, or `. env.sh` for a private notes repository) are not set up either: put that line in your profile if you want it in every shell.
 
