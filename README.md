@@ -48,6 +48,28 @@ In a repository:
 
 Then ask for a review of a branch, a PR or a range from the agent: `/pre-pr-review feature-branch` (add `multipass` before a hand-over). The command and the skills use the same scripts; a repository can keep its review files elsewhere through `.review-loop.env` (see `review-loop help`).
 
+## Typical sessions: what to type
+
+The skills are started by a slash command, or by asking in words. `/retro` and `/review-eval` are user-invoked only (they spend allowance, and `retro` proposes changes to the review setup), so in Claude Code type the slash command; the agent will not start them on its own. Asking in plain words ("run a retro on round 26 from the ledger") also works if the agent is told to follow the skill, but the slash form is the reliable one.
+
+| You want | Type | What happens |
+|---|---|---|
+| A review of a change before it goes out | `/pre-pr-review <branch, PR number or base..head>` | one pass through the lenses, sweeps and verification; a report |
+| The same, before a hand-over | `/pre-pr-review multipass <branch>` | up to three independent readers (a fourth for a spec), a vote, a report in `reviews/` |
+| To check a hand-over is covered | `review-loop gate <base> <ref>` | fails unless a report with `Open: 0` covers every commit (and any required line) |
+| To learn from a round of outside review | see below, then `/retro round 26` | ranked proposals for the review setup; nothing is changed until you agree (`--apply` after) |
+| To measure the reviewer | `/review-eval report`, `/review-eval run <case>` | recall and noise per run, from past findings as test cases |
+
+**A round of outside review, start to finish**
+
+1. On a machine that can reach GitHub: `review-loop threads fetch --repo owner/name --out threads.jsonl` (progress and the proxy in use are printed; `HTTPS_PROXY` if needed).
+2. On the machine you work on: `review-loop threads ingest threads.jsonl --full`, then `review-loop threads worksheet` for what is undecided, each with the nearest self-review report entry.
+3. Decide each thread: `review-loop threads verdict <id> fixed --commit <sha>` (or `rejected`, `caught`, `missed`, `deferred`).
+4. In the agent: `/retro round 26`. It sorts the misses by cause, and proposes the cheapest change that would have caught each: a sweep, a pointer, a lens change, or a deletion. Read the list, say which to apply.
+5. Optional: `review-loop threads cases --evals evals --repo-dir . --tag` turns the threads you verified and fixed into eval cases, and `/review-eval` rescoring shows whether a change helped.
+
+Arguments: `/pre-pr-review [PR number | branch | base..head | stack] [multipass] [--fix]`, `/retro [round | PR numbers | path to the findings] [--apply]`, `/review-eval [new-case | run <case> | report | diff <runA> <runB>]`.
+
 ## VS Code
 
 - **Skills.** VS Code reads [agent skills](https://code.visualstudio.com/docs/agent-customization/agent-skills) from `~/.claude/skills`, `~/.copilot/skills`, `~/.agents/skills`, and from `.claude/skills`, `.github/skills` and `.agents/skills` in the workspace. The default install therefore works in VS Code (Copilot agent mode, and the Claude Code extension, which uses the same folder); `--for copilot` is for a setup without a `.claude` folder, and `chat.agentSkillsLocations` can point VS Code at another folder. Skill names match their folder names, as VS Code requires.
