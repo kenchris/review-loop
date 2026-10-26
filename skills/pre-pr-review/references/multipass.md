@@ -60,7 +60,7 @@ Disposition: fixed in <sha> | not changed: <reason> | open
 ## Read in full / skimmed / not run
 ```
 
-A repo that gates hand-over on reports can check for `Open: 0` and for a range that covers every commit. After fixing findings, review the fix commits (single pass is enough) and write a second report whose range starts at the first report's tip, with `Cycle` one higher.
+A repo that gates hand-over on reports can run `scripts/review-gate.sh <base> <ref>`: it fails unless the reports with `Open: 0` cover every commit of `<base>..<ref>` (reports are read from `reviews/`, or `$REVIEWS_DIR`). `REVIEW_REQUIRE_PATHS` and `REVIEW_REQUIRE_LINE` add a stated check for commits that touch some paths (for example a `Casing: checked` line for an API surface); `REVIEW_WAIVE="reason"` passes with the reason printed, and is for whoever owns the change. After fixing findings, review the fix commits (single pass is enough) and write a second report whose range starts at the first report's tip, with `Cycle` one higher.
 
 ## 6. Convergence
 
@@ -71,4 +71,4 @@ A repo that gates hand-over on reports can check for `Open: 0` and for a range t
 
 ## 7. Score
 
-After outside review of the pushed change, record in the repo's score log: round, change, findings this review had already reported and fixed, new findings from outside, and how many of this review's findings the outside reviewers or author rejected. Recall is found / (found + new outside). Noise is rejected / reported. The `review-eval` skill (planned) keeps the log and reruns the reviewer against past findings.
+After outside review of the pushed change, record it with `scripts/review-score.sh add <round> <change> <found> <outside-new> <rejected>`. Recall is found / (found + new outside). Noise is rejected / (found + rejected). The `review-eval` skill (planned) will rerun the reviewer against past findings.

@@ -59,7 +59,7 @@ Run each as a search over the changed files and look at every hit. A hit is a fi
 11. **A changed lookup or normalisation (aliases, spellings, ids, paths).** Search for the OLD form across every file and list each hit with the route it belongs to; each must use the new rule. A function you changed must have a caller.
 12. **A cascade or merge you did.** Scan every branch for conflict markers, check that appended tests still close, compare trees before and after a rebase (the diff must be empty or explained).
 
-A repo can add sweeps in `REVIEW.md`. When a class has been found twice, make it a script or a lint rule instead of a line here.
+`scripts/diff-sweeps.sh <base> <tip>` runs the greppable ones for you over the lines the range added, and prints each hit as a question. The patterns live in `scripts/sweeps/*.sweeps` (C and C++, JavaScript, general); a repo adds its own in a `REVIEW.sweeps` file at its root, one `name ## globs ## regex ## why` per line. When a class has been found twice, make it a sweep or a lint rule instead of a line here.
 
 ## 4. Verify before you report
 
@@ -89,7 +89,7 @@ If `--fix` is given, or the developer asks afterwards: propose the plan first an
 After each round of outside review, for every finding this review did not catch:
 
 1. Add one line to the repo's `REVIEW.md` under its class: the pattern, the example, how to spot it. If it is greppable, add a sweep or a lint rule instead.
-2. Record the round: how many of the outside findings this review had already reported (recall), and how many of this review's findings the outside reviewers or author rejected (noise). A falling recall means the lenses need the new class; rising noise means a lens is too loose.
+2. Record the round with `scripts/review-score.sh add <round> <change> <found> <outside-new> <rejected>`: how many of the outside findings this review had already reported (recall), and how many of this review's findings the outside reviewers or author rejected (noise). `review-score.sh show` prints both per round. A falling recall means the lenses need the new class; rising noise means a lens is too loose.
 3. When the same class shows up a second time, stop adding lines: make it a check that runs.
 
 ## 7. Multi-pass mode

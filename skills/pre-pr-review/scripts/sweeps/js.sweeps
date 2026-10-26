@@ -1,0 +1,5 @@
+# JavaScript and TypeScript. Format: name ## path globs ## regex (ERE) ## why
+unawaited-fetch ## *.js *.ts *.mjs ## ^[[:space:]]*fetch\( ## a promise neither awaited nor caught: a failure is lost, and the next step runs before the response
+json-parse ## *.js *.ts *.mjs ## JSON\.parse\( ## throws on bad input: is it inside a try, and is the parsed shape checked before use?
+inner-html ## *.js *.ts *.mjs ## \.(innerHTML|outerHTML)[[:space:]]*= ## markup built from data: escaped, or inserted as text?
+new-listener ## *.js *.ts *.mjs ## addEventListener\( ## is there a matching removal where the owner is torn down (a disconnect or unmount hook)?

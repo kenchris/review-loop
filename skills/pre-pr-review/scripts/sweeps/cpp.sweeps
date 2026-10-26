@@ -1,0 +1,9 @@
+# C and C++. Format: name ## path globs ## regex (ERE) ## why
+json-default-accessor ## *.cpp *.h ## \.value\("[A-Za-z_]+", (std::string\(\)|0|false)\) ## a defaulted typed accessor throws on a wrong-typed field in some JSON libraries: is the type checked first, and is a wrong type an error?
+json-typed-get ## *.cpp *.h ## \.get<(int|int64_t|uint64_t|std::size_t|std::string)>\(\) ## a typed get on data from outside: is the type checked, the range checked, and an unsigned value above the signed maximum handled?
+fixed-temp-name ## *.cpp *.h ## temp_directory_path\(\) / "[^"]*" ## a fixed name under the temp directory: two parallel jobs collide, add a unique suffix
+std-regex ## *.cpp *.h ## std::regex[ (]|regex_replace|regex_search ## std::regex on a hot path or on input from outside: slow and can recurse deeply
+rename-over-existing ## *.cpp *.h ## (fs|filesystem)::rename\( ## rename does not replace an existing file on every platform: use one replace helper
+os-handle-open ## *.cpp *.h ## CreateFileW?\(|CreateProcessW?\(|CreatePipe\(|OpenProcess\(|socket\( ## is the result checked before use, closed on every path, and not inherited by a child that should not have it?
+thread-local-pointer ## *.cpp *.h ## thread_local [^=;]*\* ## a thread_local pointer to a caller's object can dangle
+strict-serialise ## *.cpp *.h ## \.dump\( ## serialising text that may be invalid UTF-8 throws in some libraries: inside code that must finish a run, replace invalid bytes first

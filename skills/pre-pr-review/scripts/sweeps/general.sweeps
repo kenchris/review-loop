@@ -1,0 +1,3 @@
+# Any language. Format: name ## path globs ## regex (ERE) ## why
+left-behind ## * ## (TODO|FIXME|XXX|HACK)([^A-Za-z]|$) ## left in on purpose? Say what it waits for, or finish it
+fixed-tmp-in-tests ## *test* *spec* ## "/tmp/[A-Za-z_.-]+ ## a fixed path under /tmp in a test: parallel jobs collide, use a unique directory
