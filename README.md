@@ -37,22 +37,64 @@ Needs bash and git (written to avoid bash 4 features, tested on bash 5 only). `.
 
 **Windows (PowerShell or cmd):** run `.\install.cmd --for all --add-to-path` (keep the `.\`: another `install.cmd` on your PATH may win without it). Do not run `./install.sh` in PowerShell (Windows opens the file in an editor), and do not run `bash install.sh` when `bash` is WSL's: that installs into the Linux home. `install.cmd` finds the bash of Git for Windows through `git`, not through the PATH, and the `review-loop.cmd` it installs does the same, so `review-loop` works in PowerShell, cmd and VS Code's terminal. Git Bash users can run `./install.sh` as on Linux.
 
-`install.sh` does not edit your shell profile or PATH. It prints a note when `~/.local/bin` (where the `review-loop` launcher goes) is not on the PATH. Add it once yourself: in Git Bash `echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc`; in PowerShell `[Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:USERPROFILE/.local/bin", "User")` (then open a new terminal). The scripts that need a repository's own files (`REVIEW_LOOP_CONFIG`, or `. env.sh` for a private notes repository) are not set up either: put that line in your profile if you want it in every shell.
+If the folder with the `review-loop` command (`~/.local/bin`) is not on your PATH, the installer says so and, in a terminal, offers to add it; `--add-to-path` does it without asking, `--no-path` never does. Open a new terminal afterwards. Check with `review-loop doctor`.
 
-## Use
+## Start here: four levels
 
-In a repository:
+You do not need all of this. Start at level 1 and stop whenever it is enough. Each level adds one thing; nothing at a higher level is needed for a lower one.
 
-    review-loop init           # REVIEW.md, REVIEW.sweeps, reviews/ and a config file; never overwrites
-    review-loop doctor         # tools, skills and this repository's setup
-    review-loop sweeps <base> <tip>
-    review-loop gate <base> <ref>
-    review-loop score add <round> <change> <found> <outside-new> <rejected>
-    review-loop eval case new <id> <base> <tip> | blind <id> <dest> | record ... | report
+Two places to type. **The agent** is the chat in Claude Code or VS Code: lines starting with `/`. **A terminal** is a shell: lines starting with `review-loop`. A terminal command never calls a model; the agent can also run one for you if you ask.
 
-Then ask for a review of a branch, a PR or a range from the agent: `/pre-pr-review feature-branch` (add `multipass` before a hand-over). The command and the skills use the same scripts; a repository can keep its review files elsewhere through `.review-loop.env` (see `review-loop help`).
+### Level 1: ask for a review (one command, no setup)
 
-## Typical sessions: what to type
+After `install`, open your agent in any git repository, on a branch with changes, and type:
+
+    /pre-pr-review
+
+That reviews the current branch against its base and prints findings, each confirmed in the code. Variations:
+
+    /pre-pr-review 123                  a pull request number
+    /pre-pr-review main..my-branch      a range
+    /pre-pr-review multipass            three independent readers and a vote: use before handing something over
+
+That is the whole of level 1. Fix what it finds, run it again.
+
+### Level 2: tell it about your repository (two minutes, once)
+
+In a terminal, in the repository:
+
+    review-loop init
+    review-loop doctor
+
+`init` creates `REVIEW.md` (what failure means here, what to ignore, what guards something), `REVIEW.sweeps` (your own search rules) and `reviews/` (saved reports). It never overwrites. Edit `REVIEW.md` a little: the reviewer reads it first. Add `--vscode` to also get editor tasks.
+
+You can now also run the mechanical checks alone, without an agent and without cost:
+
+    review-loop sweeps main HEAD        every added line run through the sweeps; each hit is a question
+
+### Level 3: make "reviewed" a rule (for teams)
+
+Save the multipass report (`/pre-pr-review multipass my-branch` writes it to `reviews/`), commit it, and check before a hand-over or merge:
+
+    review-loop gate main HEAD          fails unless a report with Open: 0 covers every commit
+
+This checks that a review was written, not that it was good. In CI see [docs/ci.md](docs/ci.md).
+
+### Level 4: learn from the reviews you get (optional)
+
+After a round of outside review (for example Copilot comments on your pull requests), turn what you missed into checks:
+
+    review-loop threads fetch --repo owner/name --out threads.jsonl     where GitHub is reachable
+    review-loop threads ingest threads.jsonl --full
+    review-loop threads worksheet                                       what is undecided
+    review-loop threads verdict <id> fixed --commit <sha>               one per thread (or rejected, missed, deferred)
+    /retro round 26                                                     in the agent: ranked proposals; nothing changes until you agree
+
+`/review-eval` measures the reviewer on past findings (costs allowance; you start it yourself). Details below.
+
+## Reference: every command
+
+A repository can keep its review files elsewhere through `.review-loop.env` (see `review-loop help`). The commands and the skills use the same scripts.
 
 There are two kinds of thing to type, and they run in different places. **Slash commands** (`/pre-pr-review`, `/retro`, `/review-eval`) are typed to the agent: they start a skill, where the agent reads and reasons. **Terminal commands** (`review-loop ...`, `fetch-threads.bat`) are typed in a shell: they are plain scripts that make no model call, and the agent can run them for you if you ask ("run the gate for sched-7 to sched-9").
 
