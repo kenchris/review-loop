@@ -18,6 +18,10 @@ base="${1:?usage: diff-sweeps.sh <base-ref> <tip-ref> [sweep-file ...]}"
 tip="${2:?usage: diff-sweeps.sh <base-ref> <tip-ref> [sweep-file ...]}"
 shift 2
 
+for ref in "$base" "$tip"; do
+  git rev-parse --verify --quiet "$ref^{commit}" >/dev/null || { echo "diff-sweeps: '$ref' is not a commit in this repository" >&2; exit 2; }
+done
+
 here="$(cd "$(dirname "$0")" && pwd)"
 top="$(git rev-parse --show-toplevel)"
 files=("$@")
@@ -44,7 +48,7 @@ sweep() {  # name, globs, regex, why
   hits=$((hits + n))
 }
 
-for file in "${files[@]}"; do
+for file in ${files[@]+"${files[@]}"}; do  # (the guard keeps an empty list working under set -u in older bash)
   while IFS= read -r line || [ -n "$line" ]; do
     case "$line" in ''|'#'*) continue ;; esac
     case "$line" in *' ## '*' ## '*) ;; *) echo "diff-sweeps: $file: not 'name ## globs ## regex ## why': $line" >&2; continue ;; esac
@@ -57,9 +61,10 @@ for file in "${files[@]}"; do
 done
 
 # Merge hygiene in the files the range touches: conflict markers committed.
-touched=$(git diff --name-only "$base..$tip" 2>/dev/null)
+touched=$(git diff --name-only -z "$base..$tip" 2>/dev/null | tr '\0' '\n')
 if [ -n "$touched" ]; then
-  markers=$(printf '%s\n' "$touched" | xargs git grep -l -E '^(<<<<<<< |>>>>>>> )' "$tip" -- 2>/dev/null | sed "s|^[^:]*:||")
+  # NUL-separated, so a file name with a space is not split
+  markers=$(git diff --name-only -z "$base..$tip" 2>/dev/null | xargs -0 git grep -l -E '^(<<<<<<< |>>>>>>> )' "$tip" -- 2>/dev/null | sed "s|^[^:]*:||")
   if [ -n "$markers" ]; then
     echo "[conflict-markers] committed conflict markers:"; printf '%s\n' "$markers" | sed 's/^/  /'
     hits=$((hits + 1))

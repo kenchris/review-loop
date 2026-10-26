@@ -12,8 +12,8 @@ As in SKILL.md section 1. For a stack, run per branch, bottom first, on that bra
 
 | Reader | Lenses and sweeps |
 |---|---|
-| 1. Input, limits, tests | lenses 1, 6, 10; sweeps 2, 3, 4, 5 |
-| 2. Error paths, state, concurrency, platform | lenses 2, 3, 9, 11, 17; sweeps 1, 6, 7, 9 |
+| 1. Input, limits, cost, tests | lenses 1, 6, 7, 10; sweeps 2, 3, 4, 5 |
+| 2. Error paths, state, concurrency, platform, CI | lenses 2, 3, 9, 11, 17, 18; sweeps 1, 6, 7, 9 |
 | 3. Agreement, claims, dead code, routing, UI | lenses 4, 5, 8, 12, 13, 14, 15, 16; sweeps 8, 10, 11, 12 |
 
 Drop what cannot apply (no UI code: skip lens 12) and say what was dropped.

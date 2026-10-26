@@ -32,7 +32,7 @@ More are planned, see [PLAN.md](PLAN.md).
     ./install.sh --for all    # also ~/.copilot/skills
     ./install.sh --project .  # into a project's .claude/skills (and .github/skills with --for all), shared through its repository
 
-Needs bash 4+ and git; on Windows use Git Bash (the installer adds a `review-loop.cmd` for cmd.exe and PowerShell). `./install.sh --uninstall` removes what it installed.
+Needs bash and git (written to avoid bash 4 features, tested on bash 5 only); on Windows use Git Bash (the installer adds a `review-loop.cmd` for cmd.exe and PowerShell). `./install.sh --uninstall` removes what it installed.
 
 ## Use
 
@@ -60,3 +60,9 @@ The skills carry the method. What your repo specifically needs a reviewer to kno
 ## License
 
 Apache-2.0, see [LICENSE](LICENSE).
+
+## Tests
+
+    bash tests/run.sh
+
+Scratch repositories and a scratch `HOME` only; nothing outside the temp directory is touched. It covers the gate, the sweeps, the score log, the eval scripts, the installer and the command, and checks that every lens and sweep is assigned to a reader in the multipass table.

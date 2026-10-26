@@ -142,7 +142,7 @@ JSON
     ok=0; bad=0
     check() { if eval "$2" >/dev/null 2>&1; then echo "ok       $1"; ok=$((ok + 1)); else echo "MISSING  $1"; bad=$((bad + 1)); fi; }
     echo "review-loop $(cat "$home/VERSION" 2>/dev/null || echo '?') at $home"
-    check "bash 4+"                       '[ "${BASH_VERSINFO[0]}" -ge 4 ]'
+    check "bash ${BASH_VERSION%%(*}"      'true'
     check "git"                           'git --version'
     check "awk and sed"                   'awk "BEGIN{}" && sed --version || sed -n 1p /dev/null'
     skill_found() { # a skill in any folder Claude Code or VS Code reads

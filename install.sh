@@ -11,7 +11,7 @@
 #   ./install.sh --no-bin            skills only
 #   ./install.sh --uninstall         remove what this script installed (same options select where)
 #
-# Needs bash 4+ and git. On Windows, use Git Bash.
+# Needs bash and git (written to avoid bash 4 features; tested on bash 5). On Windows, use Git Bash.
 set -eu
 here="$(cd "$(dirname "$0")" && pwd)"
 link=0; project=""; bindir="$HOME/.local/bin"; want_bin=1; uninstall=0; target="claude"

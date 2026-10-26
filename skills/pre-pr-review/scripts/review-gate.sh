@@ -24,6 +24,10 @@ if [ -n "${REVIEW_WAIVE:-}" ]; then
   exit 0
 fi
 
+for ref in "$base" "$@"; do
+  git rev-parse --verify --quiet "$ref^{commit}" >/dev/null || { echo "review gate: '$ref' is not a commit in this repository" >&2; exit 2; }
+done
+
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 need="$tmp/need"; have="$tmp/have"; need_extra="$tmp/need_extra"; have_extra="$tmp/have_extra"
 : > "$have"; : > "$have_extra"
