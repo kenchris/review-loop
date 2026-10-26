@@ -91,6 +91,23 @@ Every outside comment on your pull requests is a check you did not have. This le
 
 [What you get from it](#what-you-get-from-outside-review), and the [full walkthrough](docs/learning-from-reviews.md).
 
+## What you get from outside review
+
+Without this, the same thing happens every round: a reviewer finds things you missed, you fix them, and the next change gets the same kind of comment. The fixes disappear into the pull request and nothing stops the next miss.
+
+With it, each round leaves something behind:
+
+- **A record, not a pile of comments.** Every thread is decided once (fixed, wrong, not now) and never asked twice. A round of a hundred threads does not start from a hundred undecided ones; it starts from what is new.
+- **Misses turn into checks that run for free.** `/retro` asks, for each real miss, what the cheapest check would have been, and ranks the answers by how many misses each would have caught. Typically a one-line search rule that flags the pattern on every future change (no model, no allowance), a single line in `REVIEW.md` for a judgement call, or deleting a line that never helped. You choose which to apply.
+- **You find out which checks pay.** Fixed findings can become test cases, so `/review-eval` can tell you whether a change to the review setup caught more or only added noise.
+- **Wrong comments are remembered too.** A rejected thread keeps your reason, so the reviewer's noise is measured and not fixed twice.
+
+A real round: nine Copilot comments on three pull requests, eight of them right. `/retro` sorted them by cause. Three were things the review lenses already covered but a reader skipped; one was a pattern a one-line search would have found (a pointer cast with no family check); one was a deleted test file nobody had noticed. It came back with a short ranked list of changes to the review setup, instead of nine fixes that teach the next review nothing.
+
+It pays off after a few rounds; with one or two comments there is nothing to learn from yet. Start with `review-loop threads sync`.
+
+**Full guide:** [docs/learning-from-reviews.md](docs/learning-from-reviews.md): setup, each command, what every verdict means, what `/retro` does with them, and what to do when the fetch fails. File formats: [skills/retro/references/threads.md](skills/retro/references/threads.md).
+
 ## Reference: every command
 
 A repository can keep its review files elsewhere through `.review-loop.env` (see `review-loop help`). The commands and the skills use the same scripts.
@@ -149,19 +166,3 @@ Apache-2.0, see [LICENSE](LICENSE).
 
 Scratch repositories and a scratch `HOME` only; nothing outside the temp directory is touched. It covers the gate, the sweeps, the score log, the eval scripts, the installer and the command, and checks that every lens and sweep is assigned to a reader in the multipass table.
 
-## What you get from outside review
-
-Without this, the same thing happens every round: a reviewer finds things you missed, you fix them, and the next change gets the same kind of comment. The fixes disappear into the pull request and nothing stops the next miss.
-
-With it, each round leaves something behind:
-
-- **A record, not a pile of comments.** Every thread is decided once (fixed, wrong, not now) and never asked twice. A round of a hundred threads does not start from a hundred undecided ones; it starts from what is new.
-- **Misses turn into checks that run for free.** `/retro` asks, for each real miss, what the cheapest check would have been, and ranks the answers by how many misses each would have caught. Typically a one-line search rule that flags the pattern on every future change (no model, no allowance), a single line in `REVIEW.md` for a judgement call, or deleting a line that never helped. You choose which to apply.
-- **You find out which checks pay.** Fixed findings can become test cases, so `/review-eval` can tell you whether a change to the review setup caught more or only added noise.
-- **Wrong comments are remembered too.** A rejected thread keeps your reason, so the reviewer's noise is measured and not fixed twice.
-
-A real round: nine Copilot comments on three pull requests, eight of them right. `/retro` sorted them by cause. Three were things the review lenses already covered but a reader skipped; one was a pattern a one-line search would have found (a pointer cast with no family check); one was a deleted test file nobody had noticed. It came back with a short ranked list of changes to the review setup, instead of nine fixes that teach the next review nothing.
-
-It pays off after a few rounds; with one or two comments there is nothing to learn from yet. Start with `review-loop threads sync`.
-
-**Full guide:** [docs/learning-from-reviews.md](docs/learning-from-reviews.md): setup, each command, what every verdict means, what `/retro` does with them, and what to do when the fetch fails. File formats: [skills/retro/references/threads.md](skills/retro/references/threads.md).
