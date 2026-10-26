@@ -3,6 +3,7 @@
 #
 #   eval-record.sh finding <run> <case> <Fn> found|partial|missed [note]
 #   eval-record.sh extra   <run> <case> real|rejected [note]
+#   eval-record.sh cost    <run> <case> <tokens> [model] [note]    what the run of that case cost (to $EVALS_DIR/costs.tsv)
 #
 # <run> labels one run of the reviewer (a date, or the version of the lenses it used). For each finding of the case,
 # record whether the report had it (found), had part of it or the same line with the opposite conclusion (partial), or not (missed).
@@ -24,5 +25,11 @@ case "${1:-}" in
     [ $# -ge 4 ] || { echo "usage: eval-record.sh extra <run> <case> real|rejected [note]"; exit 2; }
     case "$4" in real|rejected) ;; *) echo "verdict is real or rejected"; exit 2 ;; esac
     printf '%s\t%s\t%s\textra\t%s\t%s\n' "$now" "$2" "$3" "$4" "${5:-}" >> "$f" ;;
-  *) echo "usage: eval-record.sh finding|extra"; exit 2 ;;
+  cost)
+    [ $# -ge 4 ] || { echo "usage: eval-record.sh cost <run> <case> <tokens> [model] [note]"; exit 2; }
+    case "$4" in ''|*[!0-9]*) echo "tokens is a whole number (all readers and the verify step added up)"; exit 2 ;; esac
+    c="$dir/costs.tsv"
+    [ -f "$c" ] || printf 'date\trun\tcase\ttokens\tmodel\tnote\n' > "$c"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$now" "$2" "$3" "$4" "${5:-}" "${6:-}" >> "$c" ;;
+  *) echo "usage: eval-record.sh finding|extra|cost"; exit 2 ;;
 esac

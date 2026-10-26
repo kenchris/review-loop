@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Report the recorded runs.
 #
-#   eval-report.sh                  recall and noise per run, and per case within each run
+#   eval-report.sh                  recall and noise per run, and per case within each run; with costs recorded, tokens per case and recall per 100k tokens
 #   eval-report.sh diff <runA> <runB>   the findings whose verdict changed between two runs (a lens change that helped or hurt)
 #
 # recall = (found + partial/2) / findings recorded;  strict recall counts only "found".
@@ -41,6 +41,20 @@ case "${1:-}" in
           for (j = 1; j <= nc[r]; j++) { c = cl[r, j]
             printf "    %s: found %d/%d, partial %d, extras real %d rejected %d\n", c, v[r, c, "found"], n[r, c], v[r, c, "partial"], xr[r, c], xj[r, c] }
         }
-      }' "$f" ;;
+      }' "$f"
+    # What the runs cost, if costs were recorded (eval-record.sh cost): tokens per case, and recall per 100k tokens.
+    if [ -f "$dir/costs.tsv" ]; then
+      echo
+      awk -F'\t' '
+        FNR == NR { if (FNR > 1 && $4 != "extra") { n[$2]++; fo[$2] += ($5 == "found"); pa[$2] += ($5 == "partial") } next }
+        FNR == 1 { next }
+        { t[$2] += $4; k[$2]++; if (!($2 in m)) { m[$2] = $5; order[++no] = $2 } }
+        END {
+          for (i = 1; i <= no; i++) { r = order[i]
+            printf "cost %s: %d tokens over %d case(s), %d per case%s", r, t[r], k[r], t[r] / k[r], (m[r] != "" ? " (" m[r] ")" : "")
+            if (n[r] > 0 && t[r] > 0) printf ", recall %.0f%% = %.1f points per 100k tokens", 100 * (fo[r] + pa[r] / 2) / n[r], 100 * (fo[r] + pa[r] / 2) / n[r] / (t[r] / 100000)
+            print "" }
+        }' "$f" "$dir/costs.tsv"
+    fi ;;
   *) echo "usage: eval-report.sh [diff <runA> <runB>]"; exit 2 ;;
 esac

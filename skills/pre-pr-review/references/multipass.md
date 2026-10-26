@@ -8,6 +8,8 @@ It costs a full read of the diff per group. Use it before handing over a change;
 
 As in SKILL.md section 1. For a stack, run per branch, bottom first, on that branch's own commits. Skip a commit an earlier report already covers.
 
+**Depth first.** Run `review-loop depth <base> <tip>` (`scripts/review-depth.sh`). It suggests `single` for documentation and tests only, and for a small code change (60 lines or fewer by default) that touches no guard path; `multipass` for everything else, and always for a file under a guard path (a pattern of `REVIEW.gate`, or `REVIEW_GUARD_PATHS`). It also suggests the model for the readers. On `single`, run one reader through all the lenses (SKILL.md), verify, and write the same report with `Mode: single` and the line `Depth: single (<the reason>)`; the gate accepts it like any report with `Open: 0`. You may go deeper than the suggestion, never shallower for a guard path. The saving is the point: three readers re-read the same diff, so a change that does not need them should not pay for them.
+
 ## 2. Groups (at most three readers; four when a spec applies)
 
 | Reader | Lenses and sweeps |
@@ -58,7 +60,8 @@ Write the report where the repo keeps them (default `reviews/<branch with / as -
 ```
 # Review of <branch>
 Reviewed-range: <full sha of base>..<full sha of tip>
-Mode: multipass (readers 1 2 3, dropped: ...)
+Mode: multipass (readers 1 2 3, dropped: ...)   or   Mode: single
+Depth: <single|multipass> (<the reason review-loop depth gave>)
 Date: <yyyy-mm-dd>
 Cycle: <1 | 2 | 3>
 Open: <number of confirmed findings with disposition "open">

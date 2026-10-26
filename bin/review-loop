@@ -4,6 +4,7 @@
 #   review-loop init [--vscode]              create REVIEW.md, REVIEW.sweeps, reviews/ and .review-loop.env here (never overwrites);
 #                                            --vscode adds editor tasks, sweep hits appear in the Problems panel
 #   review-loop sweeps <base> <tip>          mechanical sweeps over the lines a range added (warn-only)
+#   review-loop depth <base> <tip>           suggest one reader or multipass, and a model, from the size and kind of the change
 #   review-loop gate <base> <ref> [<ref>..]  fail unless review reports cover every commit of <base>..<ref>
 #   review-loop score add|show ...           record and show recall and noise per round
 #   review-loop eval case|blind|record|report ...   the eval set: cases, blind runs, recorded runs, the report
@@ -27,7 +28,7 @@ home="${REVIEW_LOOP_HOME:-$(cd "$(dirname "$self")/.." && pwd)}"
 pp="$home/skills/pre-pr-review/scripts"
 ev="$home/skills/review-eval/scripts"
 
-usage() { sed -n '2,22p' "$self" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,23p' "$self" | sed 's/^# \{0,1\}//'; }
 
 top="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 cfg="${REVIEW_LOOP_CONFIG:-${top:+$top/.review-loop.env}}"
@@ -122,6 +123,10 @@ JSON
     own="${REVIEW_SWEEPS:-$top/REVIEW.sweeps}"
     [ -f "$own" ] && files+=("$own")
     exec bash "$pp/diff-sweeps.sh" "$base" "$tip" "${files[@]}" "$@" ;;
+
+  depth)
+    need_repo
+    exec bash "$pp/review-depth.sh" "$@" ;;
 
   gate)
     need_repo

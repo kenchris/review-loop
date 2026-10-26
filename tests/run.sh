@@ -129,6 +129,12 @@ expect "eval: record an extra" 0 bash "$ev/eval-record.sh" extra v1 c1 rejected
 expect "eval: report" 0 bash "$ev/eval-report.sh"
 contains "eval: recall 50%" "recall 50%"
 contains "eval: noise 50% (1 rejected of 2 reported)" "noise 50%"
+if bash "$ev/eval-report.sh" 2>&1 | grep -q '^cost '; then fail "eval: no cost line before a cost is recorded"; else pass; fi
+expect "eval: a cost must be a whole number" 2 bash "$ev/eval-record.sh" cost v1 c1 lots
+expect "eval: record a cost" 0 bash "$ev/eval-record.sh" cost v1 c1 200000 sonnet
+expect "eval: report with a cost" 0 bash "$ev/eval-report.sh"
+contains "eval: tokens per case and the model" "200000 tokens over 1 case(s), 200000 per case (sonnet)"
+contains "eval: recall per 100k tokens (50% over 200000)" "25.0 points per 100k tokens"
 printf '# R\n- keep this\n- drop this case:c1\n' > "$tmp/REVIEW.md"
 REVIEW_FILE="$tmp/REVIEW.md" expect "eval: blind checkout" 0 bash "$ev/eval-blind.sh" c1 "$tmp/blind"
 if [ -f "$tmp/blind/REVIEW.md" ] && grep -q "keep this" "$tmp/blind/REVIEW.md" && ! grep -q "drop this" "$tmp/blind/REVIEW.md" && [ ! -e "$tmp/blind/evals" ]; then pass; else fail "eval: the blind REVIEW.md keeps the other lines, drops the case's, and has no evals dir"; fi
@@ -268,6 +274,31 @@ done
 for n in $(seq 1 12); do
   if printf '%s\n' "$sweep_text" | grep -Eq "(^|[^0-9])$n([^0-9]|$)"; then pass; else fail "multipass: sweep $n belongs to no reader"; fi
 done
+
+# --- review-depth.sh
+newrepo; unset REVIEW_GATE_FILE REVIEW_GUARD_PATHS DEPTH_SMALL_LINES
+mkdir -p docs src/auth tests; echo x > docs/a.md; echo x > tests/a_test.cpp; echo x > src/main.cpp; echo x > src/auth/login.cpp; git add .; git commit -qm files
+d() { bash "$pp/review-depth.sh" "$@"; }
+echo more >> docs/a.md; echo more >> tests/a_test.cpp; git commit -qam docs-and-tests
+expect "depth: documentation and tests only is single" 0 d HEAD~1 HEAD
+contains "depth: says single" "depth: single"
+contains "depth: suggests a cheaper model for it" "haiku or sonnet"
+echo more >> src/main.cpp; git commit -qam small
+expect "depth: a small code change" 0 d HEAD~1 HEAD
+contains "depth: a small code change is single" "depth: single"
+seq 1 100 >> src/main.cpp; git commit -qam big
+expect "depth: a larger code change" 0 d HEAD~1 HEAD
+contains "depth: a larger code change is multipass" "depth: multipass"
+DEPTH_SMALL_LINES=500 expect "depth: the limit is configurable" 0 d HEAD~1 HEAD
+contains "depth: under a raised limit it is single" "depth: single"
+echo one >> src/auth/login.cpp; git commit -qam guarded
+REVIEW_GUARD_PATHS='^src/auth/' expect "depth: a guard path" 0 d HEAD~1 HEAD
+contains "depth: one line under a guard path is multipass" "depth: multipass"
+contains "depth: names the guarded file" "src/auth/login.cpp"
+printf 'Casing ## ^src/auth/\n' > "$tmp/REVIEW.gate"
+REVIEW_GATE_FILE="$tmp/REVIEW.gate" expect "depth: a path pattern of REVIEW.gate is a guard" 0 d HEAD~1 HEAD
+contains "depth: from REVIEW.gate" "depth: multipass"
+expect "depth: a bad ref fails" 2 d nope HEAD
 
 echo "$passes passed, $fails failed"
 [ "$fails" -eq 0 ]

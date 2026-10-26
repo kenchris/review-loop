@@ -43,7 +43,7 @@ Rules for a good case:
 2. Run the `pre-pr-review` skill (multipass if that is what is being measured) in `<dest>` with those instructions. Use a fresh reader with nothing else in its context: a reader that has seen the findings proves nothing. Say which model and how many readers before launching.
 3. Compare the report with the case, finding by finding. Record each: `scripts/eval-record.sh finding <run> <case> <Fn> found|partial|missed [note]`. **found**: the report names the same defect at the same place, or the same bug at another line. **partial**: the same line with part of the defect, or the opposite conclusion. **missed**: not reported.
 4. Go through what the report found that is **not** in the case. Confirm each in the code. `eval-record.sh extra <run> <case> real|rejected [note]`. A real extra is a bug nobody had found: add it to the case as a new finding with a note, after verifying. A rejected extra is noise and counts against the reviewer.
-5. `scripts/eval-report.sh` prints recall (strict and with partials) and noise per run and per case. Remove the worktree: `git worktree remove --force <dest>`.
+5. Record what each run cost: `scripts/eval-record.sh cost <run> <case> <tokens> [model]` (the tokens the readers and the verify step used, added up from what the agent reports; record one for every case of the run). `scripts/eval-report.sh` then prints recall (strict and with partials) and noise per run and per case, and tokens per case and recall per 100k tokens, so a cheaper model or fewer readers is judged on what it costs per finding. Remove the worktree: `git worktree remove --force <dest>`.
 
 `<run>` labels what was being measured: a date, or the version of the lenses (`lenses-v3`).
 

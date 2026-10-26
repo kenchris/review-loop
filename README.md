@@ -55,7 +55,9 @@ That reviews the current branch against its base and prints findings, each confi
 
     /pre-pr-review 123                  a pull request number
     /pre-pr-review main..my-branch      a range
-    /pre-pr-review multipass            three independent readers and a vote: use before handing something over
+    /pre-pr-review multipass            three independent readers and a vote: use before handing over anything that is not small
+
+Three readers cost about three times one. To see whether a change needs them, ask first (terminal, no model): `review-loop depth main HEAD` says `single` for documentation, tests and small code changes, and `multipass` for larger ones and always for a path you have marked as a guard (see `REVIEW.gate`).
 
 That is the whole of level 1. Fix what it finds, run it again.
 
@@ -120,6 +122,7 @@ There are two kinds of thing to type, and they run in different places. **Slash 
 |---|---|---|---|
 | A review of a change before it goes out | agent | `/pre-pr-review <branch, PR number or base..head>` | one pass through the lenses, sweeps and verification; a report |
 | The same, before a hand-over | agent | `/pre-pr-review multipass <branch>` | up to three independent readers (a fourth for a spec), a vote, a report in `reviews/` |
+| Whether a change needs one reader or three | terminal | `review-loop depth <base> <tip>` | `single` or `multipass`, the reason and a model; a guard path is always multipass; no model |
 | The mechanical checks alone | terminal | `review-loop sweeps <base> <tip>` | the added lines run through the sweeps; each hit is a question; no model |
 | To check a hand-over is covered | terminal | `review-loop gate <base> <ref>` | fails unless a report with `Open: 0` covers every commit (and any required line); not a slash command, and it does not review anything: it checks that a review was written |
 | The threads of a round, and your decisions | terminal | `review-loop threads fetch / ingest / worksheet / verdict` | the export, the ledger and the worksheet (see below); no model |
