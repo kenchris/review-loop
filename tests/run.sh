@@ -176,6 +176,10 @@ if command -v node >/dev/null 2>&1; then
   contains "threads: two new threads" "2 new"
   expect "threads: ingesting the same export again adds nothing" 0 node "$thr/threads.mjs" ingest "$tmp/t1.jsonl"
   contains "threads: nothing new the second time" "0 new"
+  grep 3333 "$tmp/t1.jsonl" > "$tmp/one.jsonl"
+  expect "threads: --full marks threads missing from a complete export as gone" 0 node "$thr/threads.mjs" ingest "$tmp/one.jsonl" --full
+  contains "threads: one thread is no longer exported" "1 no longer exported"
+  expect "threads: it comes back when it is exported again" 0 node "$thr/threads.mjs" ingest "$tmp/t1.jsonl"
   printf '# Review of x\nReviewed-range: a..b\nOpen: 0\n\n## F1  a.txt:3  [state]  confirmed\n' > "$REVIEWS_DIR/r.md"
   expect "threads: worksheet" 0 node "$thr/threads.mjs" worksheet
   contains "threads: a human comment is marked" "(human)"

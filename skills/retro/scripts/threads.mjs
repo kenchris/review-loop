@@ -87,7 +87,8 @@ function ingest() {
   }
   const gone = [];
   for (const [id, e] of Object.entries(ledger)) {
-    if (!seen.has(id) && !e.gone && e.last_seen !== today) { e.gone = true; gone.push(id); }
+    // With --full the export is the complete set of open threads, so anything not in it is gone now; otherwise a thread first seen today is kept.
+    if (!seen.has(id) && !e.gone && (opt.full || e.last_seen !== today)) { e.gone = true; gone.push(id); }
   }
   saveLedger(ledger);
   console.log(`${rows.length} thread(s) in the export: ${added.length} new, ${changed.length} changed status, ${gone.length} no longer exported`);

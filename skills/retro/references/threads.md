@@ -38,7 +38,7 @@ With the command: `review-loop threads fetch|ingest|list|verdict|worksheet|cases
 
 ## 2. The ledger
 
-`threads.mjs ingest threads.jsonl` adds the threads it has not seen, updates the status of known ones, and marks threads that are no longer exported. The ledger is `$THREADS_LEDGER`, `--ledger`, or `$REVIEWS_DIR/threads-ledger.json`. Each thread has a verdict:
+`threads.mjs ingest threads.jsonl` adds the threads it has not seen, updates the status of known ones, and marks threads that are no longer exported. Pass `--full` when the export is the complete set of open threads (the default fetch): everything missing from it is then marked gone at once; without it a thread first seen today is kept. The ledger is `$THREADS_LEDGER`, `--ledger`, or `$REVIEWS_DIR/threads-ledger.json`. Each thread has a verdict:
 
 | Verdict | Meaning |
 |---|---|
