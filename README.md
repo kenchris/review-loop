@@ -50,17 +50,22 @@ Then ask for a review of a branch, a PR or a range from the agent: `/pre-pr-revi
 
 ## Typical sessions: what to type
 
-The skills are started by a slash command, or by asking in words. `/retro` and `/review-eval` are user-invoked only (they spend allowance, and `retro` proposes changes to the review setup), so in Claude Code type the slash command; the agent will not start them on its own. Asking in plain words ("run a retro on round 26 from the ledger") also works if the agent is told to follow the skill, but the slash form is the reliable one.
+There are two kinds of thing to type, and they run in different places. **Slash commands** (`/pre-pr-review`, `/retro`, `/review-eval`) are typed to the agent: they start a skill, where the agent reads and reasons. **Terminal commands** (`review-loop ...`, `fetch-threads.bat`) are typed in a shell: they are plain scripts that make no model call, and the agent can run them for you if you ask ("run the gate for sched-7 to sched-9").
 
-| You want | Type | What happens |
-|---|---|---|
-| A review of a change before it goes out | `/pre-pr-review <branch, PR number or base..head>` | one pass through the lenses, sweeps and verification; a report |
-| The same, before a hand-over | `/pre-pr-review multipass <branch>` | up to three independent readers (a fourth for a spec), a vote, a report in `reviews/` |
-| To check a hand-over is covered | `review-loop gate <base> <ref>` | fails unless a report with `Open: 0` covers every commit (and any required line) |
-| To learn from a round of outside review | see below, then `/retro round 26` | ranked proposals for the review setup; nothing is changed until you agree (`--apply` after) |
-| To measure the reviewer | `/review-eval report`, `/review-eval run <case>` | recall and noise per run, from past findings as test cases |
+`/retro` and `/review-eval` are user-invoked only (they spend allowance, and `retro` proposes changes to the review setup), so in Claude Code type the slash command; the agent will not start them on its own. Asking in plain words ("run a retro on round 26 from the ledger") also works if the agent is told to follow the skill, but the slash form is the reliable one.
 
-**A round of outside review, start to finish**
+| You want | Where | Type | What happens |
+|---|---|---|---|
+| A review of a change before it goes out | agent | `/pre-pr-review <branch, PR number or base..head>` | one pass through the lenses, sweeps and verification; a report |
+| The same, before a hand-over | agent | `/pre-pr-review multipass <branch>` | up to three independent readers (a fourth for a spec), a vote, a report in `reviews/` |
+| The mechanical checks alone | terminal | `review-loop sweeps <base> <tip>` | the added lines run through the sweeps; each hit is a question; no model |
+| To check a hand-over is covered | terminal | `review-loop gate <base> <ref>` | fails unless a report with `Open: 0` covers every commit (and any required line); not a slash command, and it does not review anything: it checks that a review was written |
+| The threads of a round, and your decisions | terminal | `review-loop threads fetch / ingest / worksheet / verdict` | the export, the ledger and the worksheet (see below); no model |
+| To learn from a round of outside review | agent | `/retro round 26` (after the threads steps below) | ranked proposals for the review setup; nothing is changed until you agree (`--apply` after) |
+| To measure the reviewer | agent | `/review-eval report`, `/review-eval run <case>` | recall and noise per run, from past findings as test cases |
+| To record and read the scores | terminal | `review-loop score add ...`, `review-loop eval report` | the numbers only |
+
+**A round of outside review, start to finish** (steps 1 to 3 and 5 are terminal commands; step 4 is the only slash command)
 
 1. On a machine that can reach GitHub: `review-loop threads fetch --repo owner/name --out threads.jsonl` (progress and the proxy in use are printed; `HTTPS_PROXY` if needed).
 2. On the machine you work on: `review-loop threads ingest threads.jsonl --full`, then `review-loop threads worksheet` for what is undecided, each with the nearest self-review report entry.
