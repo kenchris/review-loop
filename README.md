@@ -91,6 +91,11 @@ The scripts run in CI; the skills do not (they need an agent). `DIFF_SWEEPS_FORM
 
 The skills carry the method. What your repo specifically needs a reviewer to know goes in a `REVIEW.md` at its root, which the skills read first: what counts as a failure here, the paths that guard something (auth, installers, sandboxes, billing), paths to ignore, naming and API conventions, extra sweeps, and the finding classes your reviewers have raised before. [REVIEW.example.md](REVIEW.example.md) shows the shape. Keep it short.
 
+## Background
+
+- [Solving code review at Anthropic](https://claude.dev/blog/solving-code-review-at-anthropic/) (Addy Osmani, Morgan Westlee Lunt and Qing Wang, October 2026): how the Claude Code team reviews code that an agent mostly writes. Review in layers; verify before a pull request; an AI review on every pull request, with findings checked by other agents; a `REVIEW.md` that says what matters in each part of the code; past incidents kept as the test set the reviewer is scored against; a review that converges (capped rounds, re-review only the new diff). `review-loop` is a small, generic version of several of these pieces: the lenses and `REVIEW.md`, the multi-reader pass with a vote, verification before a finding is reported, the cycle cap, the eval, and `retro`. It does not cover the parts that belong to a hosting platform (merge queues, feature flags, staged rollout, risk-tiered approval).
+- [Rewilding software engineering](https://medium.com/feenk/rewilding-software-engineering-900ca95ebc8c) (feenk; Tudor Gîrba and Simon Wardley): a series on moldable development, the practice of building a small tool for the question at hand when no existing one fits it. The idea we borrow is the same direction as the sweeps: a finding that keeps coming back becomes a small check written for this codebase (`REVIEW.sweeps`), not a longer checklist for a reader to remember.
+
 ## License
 
 Apache-2.0, see [LICENSE](LICENSE).
