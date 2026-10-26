@@ -11,6 +11,7 @@
 # Blank lines and lines starting with # are ignored.
 #
 # Warn-only: every hit is a question for the author ("why is this fine?"), not a verdict, and the exit status is 0.
+# DIFF_SWEEPS_FORMAT=github prints GitHub Actions warnings (::warning file=,line=::) instead of the text report, for a CI step.
 # DIFF_SWEEPS_STRICT=1 makes it exit 1 when there is any hit (for a repo that wants a CI check).
 # DIFF_SWEEPS_MAX=<n> shows up to n hits per sweep (default 12; 0 = no cap). A sweep whose name starts with ! is high priority: it is
 # listed first and never capped, because what it points at is what a cap must not hide.
@@ -46,9 +47,21 @@ sweep() {  # name, globs, regex, why, priority (high or normal)
   set +f
   [ -n "$out" ] || return 0
   n=$(printf '%s\n' "$out" | wc -l | tr -d ' ')
-  echo "[$mark$name] $why"
-  if [ "$cap" -gt 0 ]; then printf '%s\n' "$out" | head -n "$cap"; else printf '%s\n' "$out"; fi
-  if [ "$cap" -gt 0 ] && [ "$n" -gt "$cap" ]; then echo "  ... $n hits"; fi
+  shown="$(if [ "$cap" -gt 0 ]; then printf '%s\n' "$out" | head -n "$cap"; else printf '%s\n' "$out"; fi)"
+  if [ "$cap" -gt 0 ] && [ "$n" -gt "$cap" ]; then shown="$shown
+  ... $n hits"; fi
+  if [ "${DIFF_SWEEPS_FORMAT:-text}" = github ]; then
+    # GitHub Actions workflow commands: one warning per hit, on the file and line, so it shows on the changed line of a pull request.
+    printf '%s\n' "$shown" | NAME="$mark$name" WHY="$why" awk '
+      { s = $0; sub(/^  /, "", s); p = match(s, /:[0-9]+: /)
+        if (p == 0) { print; next }
+        file = substr(s, 1, p - 1); ln = substr(s, p + 1); sub(/:.*/, "", ln)
+        why = ENVIRON["WHY"]; gsub(/%/, "%25", why); gsub(/\r/, "%0D", why); gsub(/\n/, "%0A", why)
+        printf "::warning file=%s,line=%s,title=%s::%s\n", file, ln, ENVIRON["NAME"], why }'
+  else
+    echo "[$mark$name] $why"
+    printf '%s\n' "$shown"
+  fi
   hits=$((hits + n))
 }
 

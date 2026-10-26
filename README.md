@@ -77,6 +77,10 @@ There are two kinds of thing to type, and they run in different places. **Slash 
 
 Arguments: `/pre-pr-review [PR number | branch | base..head | stack] [multipass] [--fix]`, `/retro [round | PR numbers | path to the findings] [--apply]`, `/review-eval [new-case | run <case> | report | diff <runA> <runB>]`.
 
+## CI (GitHub Actions)
+
+The scripts run in CI; the skills do not (they need an agent). `DIFF_SWEEPS_FORMAT=github` prints the sweep hits as warnings on the changed lines of a pull request, and `review-loop gate` can be a required check when reports are committed. See [docs/ci.md](docs/ci.md) and the sample workflow [examples/github-actions/review-loop.yml](examples/github-actions/review-loop.yml) (a sketch, not yet run on GitHub).
+
 ## VS Code
 
 - **Skills.** VS Code reads [agent skills](https://code.visualstudio.com/docs/agent-customization/agent-skills) from `~/.claude/skills`, `~/.copilot/skills`, `~/.agents/skills`, and from `.claude/skills`, `.github/skills` and `.agents/skills` in the workspace. The default install therefore works in VS Code (Copilot agent mode, and the Claude Code extension, which uses the same folder); `--for copilot` is for a setup without a `.claude` folder, and `chat.agentSkillsLocations` can point VS Code at another folder. Skill names match their folder names, as VS Code requires.

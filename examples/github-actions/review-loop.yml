@@ -1,0 +1,41 @@
+# A sketch of review-loop checks on pull requests. Not run on GitHub from where it was written: read it, pin the tag, try it on a branch.
+# See docs/ci.md for what runs in CI and what does not.
+name: review-loop
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  REVIEW_LOOP_TAG: v0.6.0   # pin it; update on purpose
+
+jobs:
+  sweeps:
+    # Warnings on the lines the pull request adds. A hit is a question for the author: the step stays green.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Get review-loop
+        run: git clone --depth 1 --branch "$REVIEW_LOOP_TAG" https://github.com/kenchris/review-loop.git "$RUNNER_TEMP/review-loop"
+      - name: Sweeps
+        run: |
+          DIFF_SWEEPS_FORMAT=github bash "$RUNNER_TEMP/review-loop/bin/review-loop" sweeps \
+            "origin/${{ github.base_ref }}" "${{ github.event.pull_request.head.sha }}"
+
+  gate:
+    # Only if you commit review reports (reviews/*.md) to the repository. Make it a required status check in branch protection.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Get review-loop
+        run: git clone --depth 1 --branch "$REVIEW_LOOP_TAG" https://github.com/kenchris/review-loop.git "$RUNNER_TEMP/review-loop"
+      - name: Every commit is covered by a review report
+        run: |
+          bash "$RUNNER_TEMP/review-loop/bin/review-loop" gate \
+            "origin/${{ github.base_ref }}" "${{ github.event.pull_request.head.sha }}"

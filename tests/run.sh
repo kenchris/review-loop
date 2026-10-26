@@ -80,6 +80,11 @@ case "$first" in *'[!'*) pass ;; *) fail "sweeps: high-priority sweeps come firs
 DIFF_SWEEPS_MAX=0 expect "sweeps: 0 means no cap" 0 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD
 if printf '%s' "$out" | grep -q "\.\.\. 5 hits"; then fail "sweeps: with no cap nothing is elided"; else pass; fi
 git reset -q --hard HEAD~1
+printf 'x = j.value("k", 0);\n' >> a.cpp; git commit -qam "github format"
+DIFF_SWEEPS_FORMAT=github expect "sweeps: the github format prints a warning per hit on its file and line" 0 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD
+contains "sweeps: a workflow command with file, line and title" "::warning file=a.cpp,line="
+case "$out" in *"[!json-default-accessor]"*) fail "sweeps: the github format must not print the text report" ;; *) pass ;; esac
+git reset -q --hard HEAD~1
 DIFF_SWEEPS_STRICT=1 expect "sweeps: strict mode fails on a hit" 1 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD
 printf '%s\n' \
   'void h(json p) {' \
@@ -225,6 +230,17 @@ expect "command: threads, an unknown subcommand" 2 env HOME="$home" bash "$rl" t
 expect "command: threads fetch needs --repo" 2 env HOME="$home" bash "$rl" threads fetch --out "$tmp/none.jsonl"
 HOME="$home" expect "install: uninstall" 0 bash "$here/install.sh" --for all --uninstall
 if [ ! -e "$home/.claude/skills/pre-pr-review" ] && [ ! -e "$home/.local/bin/review-loop" ]; then pass; else fail "uninstall: everything removed"; fi
+# --- the installer puts the launcher folder on the PATH only when asked (scratch HOME; the Windows user PATH is never touched here)
+home2="$tmp/home2"; mkdir -p "$home2"
+HOME="$home2" REVIEW_LOOP_SKIP_WINDOWS_PATH=1 expect "install: --add-to-path edits the profile" 0 bash "$here/install.sh" --add-to-path
+contains "install: it says where it added the line" "added to $home2/.bashrc"
+HOME="$home2" REVIEW_LOOP_SKIP_WINDOWS_PATH=1 expect "install: a second run does not add it again" 0 bash "$here/install.sh" --add-to-path
+if [ "$(grep -c '# review-loop' "$home2/.bashrc")" = "1" ]; then pass; else fail "install: the profile line is there exactly once"; fi
+home3="$tmp/home3"; mkdir -p "$home3"
+HOME="$home3" expect "install: --no-path never touches a profile" 0 bash "$here/install.sh" --no-path
+if [ ! -e "$home3/.bashrc" ]; then pass; else fail "install: --no-path left a profile behind"; fi
+HOME="$tmp/home4" expect "install: with no terminal and no flag it does not ask or edit" 0 bash "$here/install.sh"
+if [ ! -e "$tmp/home4/.bashrc" ]; then pass; else fail "install: it edited a profile without being asked"; fi
 
 # --- the plugin manifest and VERSION agree
 if [ "$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$here/.claude-plugin/plugin.json")" = "$(tr -d '[:space:]' < "$here/VERSION")" ]; then pass; else fail "plugin.json version must equal VERSION"; fi
