@@ -1,6 +1,6 @@
 {
   "name": "review-loop",
   "description": "Coding-agent skills for the review loop: self-review before a change goes out, measuring the review, and turning recurring findings into checks. Works with Claude Code, VS Code and other agents that load SKILL.md skills.",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "license": "Apache-2.0"
 }

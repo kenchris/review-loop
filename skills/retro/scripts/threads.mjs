@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Work with the review threads exported by fetch-threads.ps1 (threads.jsonl), offline. Node only, no packages.
 //
+//   threads.mjs import-md <export.md> [--out f]           the older markdown export as threads.jsonl, so it can be ingested
 //   threads.mjs ingest <threads.jsonl>                    add new threads to the ledger, update the status of known ones, report what changed
 //   threads.mjs list [--verdict v] [--pr n] [--status s]  show the ledger
 //   threads.mjs verdict <id-prefix> <v> [--commit sha] [--note text]
@@ -93,6 +94,41 @@ function ingest() {
   for (const c of changed) console.log('  changed: ' + c);
   const undecided = Object.values(ledger).filter((e) => e.verdict === 'new' && !e.gone).length;
   console.log(`ledger: ${Object.keys(ledger).length} thread(s), ${undecided} undecided (${ledgerPath})`);
+}
+
+// The markdown export of the older exporter (### F<n> - PR #<n> - title blocks, plus a table of pull requests) as threads.jsonl lines.
+function importMd() {
+  const file = pos[0];
+  if (!file) die('usage: threads.mjs import-md <export.md> [--out threads.jsonl]');
+  const text = fs.readFileSync(file, 'utf8').replace(/^﻿/, '').replace(/\r\n/g, '\n');
+  const meta = new Map();
+  for (const row of text.split('\n')) {
+    const m = row.match(/^\| \[#(\d+)\]\(https:\/\/github\.com\/([^/]+\/[^/]+)\/pull\/\d+\) \| `([^`]*)` \| `([^`]*)` \| `?([0-9a-f]{7,40})`? .*?\| `([0-9a-f]{7,40})` \|/);
+    if (m) meta.set(m[1], { repo: m[2], branch: m[3], base_ref: m[4], base_sha: m[5], head_sha: m[6] });
+  }
+  const blocks = text.split(/^(?=### F\d+ - PR #\d+ - )/m).filter((b) => /^### F\d+ - PR #\d+ - /.test(b));
+  const out = [];
+  for (const b of blocks) {
+    const head = b.match(/^### (F\d+) - PR #(\d+) - (.*)$/m);
+    const kv = (k) => ((b.match(new RegExp('^- [*][*]' + k + ':[*][*][ \t]*(.*)$', 'm')) || [])[1] || '').trim();
+    const pr = parseInt(head[2], 10);
+    const mt = meta.get(String(pr)) || {};
+    const lines = kv('Line[(]s[)]').match(/(\d+)(?:-(\d+))?/) || [];
+    const comment = (b.match(/^- \*\*Comment \(verbatim\):\*\*\n([\s\S]*?)(?=^- \*\*Code at that location:\*\*|\n### |$(?![\s\S]))/m) || [])[1] || '';
+    const body = comment.split('\n').filter((l) => l.startsWith('>')).map((l) => l.replace(/^> ?/, '')).join('\n').trim();
+    const commit = kv('Commit reviewed');
+    const path_ = kv('File');
+    const thread = kv('Thread') || `md:${pr}:${path_}:${lines[1] || ''}:${commit.slice(0, 7)}`;
+    out.push(JSON.stringify({
+      repo: mt.repo || '', pr, pr_title: head[3], pr_author: '', branch: mt.branch || (kv('PR / branch').match(/^(\S+)/) || [])[1] || '',
+      base_ref: mt.base_ref || '', head_sha: mt.head_sha || '', base_sha: mt.base_sha || '', thread_id: thread, status: kv('Status') || 'open',
+      path: path_, line: lines[2] ? parseInt(lines[2], 10) : parseInt(lines[1] || '0', 10) || null, start_line: parseInt(lines[1] || '0', 10) || null,
+      commit_reviewed: commit, author: kv('Author'), created_at: '', body, comments: [{ id: null, author: kv('Author'), body, created_at: '', commit }],
+    }));
+  }
+  const dest = opt.out && opt.out !== true ? opt.out : 'threads.jsonl';
+  fs.writeFileSync(dest, out.length ? out.join('\n') + '\n' : '');
+  console.log(`${out.length} thread(s) from ${file} -> ${dest} (${meta.size} pull request row(s) read)`);
 }
 
 function list() {
@@ -199,10 +235,11 @@ function cases() {
 }
 
 switch (cmd) {
+  case 'import-md': importMd(); break;
   case 'ingest': ingest(); break;
   case 'list': list(); break;
   case 'verdict': verdict(); break;
   case 'worksheet': worksheet(); break;
   case 'cases': cases(); break;
-  default: die('usage: threads.mjs ingest|list|verdict|worksheet|cases ... (see the top of the file)');
+  default: die('usage: threads.mjs import-md|ingest|list|verdict|worksheet|cases ... (see the top of the file)');
 }

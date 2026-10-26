@@ -160,6 +160,10 @@ if command -v node >/dev/null 2>&1; then
   expect "threads: --repo missing" 2 node "$thr/fetch-threads.mjs" --out "$tmp/y.jsonl"
 
   export THREADS_LEDGER="$tmp/ledger.json" REVIEWS_DIR="$tmp/reviews"; mkdir -p "$REVIEWS_DIR"
+  # the older markdown export (Windows line endings) is read into the same records
+  printf '| [#5](https://github.com/o/r/pull/5) | `feat` | `main` | `abc1234` ("base subject") | `def5678` | PASSED | +1 / -0 | Title five |\r\n\r\n### F1 - PR #5 - A title\r\n\r\n- **PR / branch:** feat (PR #5)\r\n- **Commit reviewed:** abc1234abc1234abc1234abc1234abc1234abc12\r\n- **File:** src/a.cpp\r\n- **Line(s):** 10-12\r\n- **Author:** copilot-pull-request-reviewer\r\n- **Status:** open\r\n- **Thread:** PRRT_abc123\r\n- **Comment (verbatim):**\r\n> First line of the comment.\r\n>\r\n> Second paragraph.\r\n- **Code at that location:**\r\n  ```cpp\r\n  int x;\r\n  ```\r\n' > "$tmp/export.md"
+  expect "threads: import-md" 0 node "$thr/threads.mjs" import-md "$tmp/export.md" --out "$tmp/md.jsonl"
+  if grep -q '"thread_id":"PRRT_abc123"' "$tmp/md.jsonl" && grep -q '"path":"src/a.cpp"' "$tmp/md.jsonl" && grep -q '"line":12' "$tmp/md.jsonl" && grep -q '"base_sha":"abc1234"' "$tmp/md.jsonl" && grep -q 'Second paragraph' "$tmp/md.jsonl" && grep -q '"repo":"o/r"' "$tmp/md.jsonl"; then pass; else fail "threads: import-md reads the thread id, path, last line, base from the table, the whole comment and the repo"; fi
   expect "threads: ingest" 0 node "$thr/threads.mjs" ingest "$tmp/t1.jsonl"
   contains "threads: two new threads" "2 new"
   expect "threads: ingesting the same export again adds nothing" 0 node "$thr/threads.mjs" ingest "$tmp/t1.jsonl"

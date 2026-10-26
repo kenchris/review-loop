@@ -52,7 +52,7 @@ With the command: `review-loop threads fetch|ingest|list|verdict|worksheet|cases
 
 ## 3. The worksheet and the cases
 
-- `threads.mjs worksheet [--reports reviews]` lists the undecided and missed threads. Each row shows a self-review report entry within 15 lines of the comment, if there is one: a hint that it was caught, never a verdict. Human comments are marked: they usually carry design-level points.
+- `threads.mjs import-md <export.md>` reads the older markdown export (the one with ` [--reports reviews]` lists the undecided and missed threads. Each row shows a self-review report entry within 15 lines of the comment, if there is one: a hint that it was caught, never a verdict. Human comments are marked: they usually carry design-level points.
 - `threads.mjs cases --evals <dir> [--prefix p] [--group g] [--repo-dir d] [--tag]` writes an eval case for every pull request and reviewed commit that has threads with the verdict `fixed`: the tip is the commit reviewed, the base is the merge base with the pull request's base. Threads with the verdict `rejected` become comments in the case, never findings. Commits that are not in the repository are skipped with a message. `--tag` tags each tip `eval/<id>` so a history rewrite cannot take it. Only verified threads become findings: that is the rule that keeps a wrong comment from entering the eval.
 
 ## What goes where
