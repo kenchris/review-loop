@@ -21,7 +21,8 @@ A plan is not a spec. List only external specifications the code must conform to
 - **Name and version:** ExampleProtocol 2025-06-18 (pin a version or a date, never "latest")
 - **Text:** `docs/specs/example-protocol-2025-06-18.md` (a local copy) or a URL
 - **Implemented by:** `src/protocol/session.cpp` (sections 3 and 4), `src/protocol/auth.cpp` (section 5)
-- **Not yet implemented:** (the known gaps; a review does not report these again)
+- **Deliberately not implemented:** (parts the spec has deprecated, or that are out of scope for this repo: a review does not report their absence, and does report code that adds one back)
+- **Not yet implemented:** (known gaps with a plan; a review does not report these again, but keep the list short and current: a stale list hides real findings)
 
 ## Ignore
 
