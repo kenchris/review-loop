@@ -67,11 +67,18 @@ contains "sweeps: the hit is named" "a.cpp:2"
 printf '<<<<<<< x\nfoo\n>>>>>>> y\n' > "with space.txt"; git add .; git commit -qm marker
 expect "sweeps: a conflict marker in a file with a space in its name (was: missed)" 0 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD
 contains "sweeps: the marker is found" "with space.txt"
-for k in aa bb cc dd ee; do printf 'x = j.value("%s", 0);\n' "$k" >> a.cpp; done; git commit -qam many
-DIFF_SWEEPS_MAX=2 expect "sweeps: the cap is respected" 0 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD
-contains "sweeps: ... and the rest is counted" "... 5 hits"
-DIFF_SWEEPS_MAX=100 expect "sweeps: a high cap shows every hit" 0 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD
-if ! printf '%s' "$out" | grep -q "\.\.\. 5 hits" && printf '%s' "$out" | grep -q "a.cpp:6"; then pass; else fail "sweeps: with a high cap all five hits are listed and none is elided"; fi
+# a normal sweep is capped, a high-priority one (name starting with !) is not and is listed first
+for k in aa bb cc dd ee; do printf 'x = j["%s"].get<int>();\n' "$k" >> a.cpp; done
+for k in aa bb cc dd ee; do printf 'y = j.value("%s", 0);\n' "$k" >> a.cpp; done
+git commit -qam many
+DIFF_SWEEPS_MAX=2 expect "sweeps: a normal sweep is capped" 0 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD
+contains "sweeps: the rest of a capped sweep is counted" "... 5 hits"
+if [ "$(printf '%s' "$out" | awk '/^\[json-default-accessor\]|^\[!json-default-accessor\]/{f=1;next} /^\[/{f=0} f && /a\.cpp:/' | wc -l | tr -d ' ')" = "5" ]; then pass; else fail "sweeps: a high-priority sweep shows all five hits even with DIFF_SWEEPS_MAX=2"; fi
+contains "sweeps: a high-priority sweep is marked" "[!json-default-accessor]"
+first="$(printf '%s' "$out" | grep -n '^\[' | head -1)"
+case "$first" in *'[!'*) pass ;; *) fail "sweeps: high-priority sweeps come first (first header: $first)" ;; esac
+DIFF_SWEEPS_MAX=0 expect "sweeps: 0 means no cap" 0 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD
+if printf '%s' "$out" | grep -q "\.\.\. 5 hits"; then fail "sweeps: with no cap nothing is elided"; else pass; fi
 git reset -q --hard HEAD~1
 DIFF_SWEEPS_STRICT=1 expect "sweeps: strict mode fails on a hit" 1 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD
 printf '%s\n' \
@@ -83,10 +90,11 @@ printf '%s\n' \
   '}' >> a.cpp
 git commit -qam "patterns for the cpp sweeps"
 expect "sweeps: the new patterns run" 0 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD
-contains "sweeps: a wrong type becoming the default is named" "[wrong-type-becomes-default]"
-contains "sweeps: a dropped write result is named" "[ignored-write-result]"
+contains "sweeps: a wrong type becoming the default is named" "wrong-type-becomes-default] "
+contains "sweeps: a dropped write result is named" "ignored-write-result] "
 contains "sweeps: a loop over a client member is named" "[loop-over-client-member]"
-if printf '%s' "$out" | grep -A3 "\[ignored-write-result\]" | grep -q "bool ok = WriteJsonFile"; then fail "sweeps: a write whose result is kept is not a hit"; else pass; fi
+if printf '%s' "$out" | awk '/ignored-write-result\]/{f=1;next} /^\[/{f=0} f' | grep -q "WriteJsonFile"; then pass; else fail "sweeps: the dropped write is listed under ignored-write-result"; fi
+if printf '%s' "$out" | awk '/ignored-write-result\]/{f=1;next} /^\[/{f=0} f' | grep -q "bool ok = WriteJsonFile"; then fail "sweeps: a write whose result is kept is not a hit"; else pass; fi
 git reset -q --hard HEAD~1
 printf 'one ## *.txt ## foo ## why\nbad line\n' > own.sweeps
 expect "sweeps: an own sweep file, a malformed line is reported" 0 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD own.sweeps

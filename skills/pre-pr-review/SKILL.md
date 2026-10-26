@@ -60,7 +60,7 @@ Run each as a search over the changed files and look at every hit. A hit is a fi
 11. **A changed lookup or normalisation (aliases, spellings, ids, paths).** Search for the OLD form across every file and list each hit with the route it belongs to; each must use the new rule. A function you changed must have a caller.
 12. **A cascade or merge you did.** Scan every branch for conflict markers, check that appended tests still close, compare trees before and after a rebase (the diff must be empty or explained).
 
-`scripts/diff-sweeps.sh <base> <tip>` runs the greppable ones for you over the lines the range added, and prints each hit as a question. The patterns live in `scripts/sweeps/*.sweeps` (C and C++, JavaScript, general); a repo adds its own in a `REVIEW.sweeps` file at its root, one `name ## globs ## regex ## why` per line. When a class has been found twice, make it a sweep or a lint rule instead of a line here.
+`scripts/diff-sweeps.sh <base> <tip>` runs the greppable ones for you over the lines the range added, and prints each hit as a question. The patterns live in `scripts/sweeps/*.sweeps` (C and C++, JavaScript, general); a repo adds its own in a `REVIEW.sweeps` file at its root, one `name ## globs ## regex ## why` per line. Ordinary sweeps show at most 12 hits each (`DIFF_SWEEPS_MAX`, 0 for all); a sweep whose name starts with `!` is high priority: it is listed first and never capped, because what it points at (a thrown exception, a dropped write result, a leaked handle) is what a cap must not hide. Mark a sweep `!` when a missed hit costs more than reading the extra lines. When a class has been found twice, make it a sweep or a lint rule instead of a line here.
 
 ## 4. Verify before you report
 

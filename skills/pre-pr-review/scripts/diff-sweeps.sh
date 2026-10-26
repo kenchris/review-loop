@@ -6,13 +6,14 @@
 # Sweep files (default: every scripts/sweeps/*.sweeps next to this script, plus ./REVIEW.sweeps at the repository root if it exists).
 # One sweep per line, fields separated by " ## ":
 #
-#   name ## path globs (space separated, git pathspec) ## regex (POSIX ERE, awk dialect: [[:space:]], not \s) ## why it is a question
+#   [!]name ## path globs (space separated, git pathspec) ## regex (POSIX ERE, awk dialect: [[:space:]], not \s) ## why it is a question
 #
 # Blank lines and lines starting with # are ignored.
 #
 # Warn-only: every hit is a question for the author ("why is this fine?"), not a verdict, and the exit status is 0.
 # DIFF_SWEEPS_STRICT=1 makes it exit 1 when there is any hit (for a repo that wants a CI check).
-# DIFF_SWEEPS_MAX=<n> shows up to n hits per sweep (default 12; a reader that needs the whole list sets it high).
+# DIFF_SWEEPS_MAX=<n> shows up to n hits per sweep (default 12; 0 = no cap). A sweep whose name starts with ! is high priority: it is
+# listed first and never capped, because what it points at is what a cap must not hide.
 # Also checked: conflict markers in the files the range touches.
 set -u
 base="${1:?usage: diff-sweeps.sh <base-ref> <tip-ref> [sweep-file ...]}"
@@ -33,8 +34,9 @@ fi
 
 hits=0
 max="${DIFF_SWEEPS_MAX:-12}"
-sweep() {  # name, globs, regex, why
-  local name="$1" globs="$2" re="$3" why="$4" out n
+sweep() {  # name, globs, regex, why, priority (high or normal)
+  local name="$1" globs="$2" re="$3" why="$4" prio="$5" out n cap="$max" mark=""
+  if [ "$prio" = "high" ]; then cap=0; mark="!"; fi   # a high-priority sweep is never capped
   set -f  # the globs are git pathspecs, not shell patterns
   # shellcheck disable=SC2086  # $globs is meant to split into several pathspecs
   out=$(git diff -U0 --no-color "$base..$tip" -- $globs 2>/dev/null | RE="$re" awk '
@@ -44,22 +46,31 @@ sweep() {  # name, globs, regex, why
   set +f
   [ -n "$out" ] || return 0
   n=$(printf '%s\n' "$out" | wc -l | tr -d ' ')
-  echo "[$name] $why"
-  printf '%s\n' "$out" | head -n "$max"
-  [ "$n" -gt "$max" ] && echo "  ... $n hits"
+  echo "[$mark$name] $why"
+  if [ "$cap" -gt 0 ]; then printf '%s\n' "$out" | head -n "$cap"; else printf '%s\n' "$out"; fi
+  if [ "$cap" -gt 0 ] && [ "$n" -gt "$cap" ]; then echo "  ... $n hits"; fi
   hits=$((hits + n))
 }
 
-for file in ${files[@]+"${files[@]}"}; do  # (the guard keeps an empty list working under set -u in older bash)
-  while IFS= read -r line || [ -n "$line" ]; do
-    case "$line" in ''|'#'*) continue ;; esac
-    case "$line" in *' ## '*' ## '*) ;; *) echo "diff-sweeps: $file: not 'name ## globs ## regex ## why': $line" >&2; continue ;; esac
-    name="${line%% ## *}"; rest="${line#* ## }"
-    globs="${rest%% ## *}"; rest="${rest#* ## }"
-    re="${rest%% ## *}"; why="${rest#* ## }"
-    [ "$why" = "$re" ] && why=""
-    sweep "$name" "$globs" "$re" "$why"
-  done < "$file"
+# High-priority sweeps (names starting with !) first, then the rest.
+for pass in high normal; do
+  for file in ${files[@]+"${files[@]}"}; do  # (the guard keeps an empty list working under set -u in older bash)
+    while IFS= read -r line || [ -n "$line" ]; do
+      case "$line" in ''|'#'*) continue ;; esac
+      case "$line" in
+        *' ## '*' ## '*) ;;
+        *) [ "$pass" = "high" ] && echo "diff-sweeps: $file: not 'name ## globs ## regex ## why': $line" >&2; continue ;;
+      esac
+      name="${line%% ## *}"; rest="${line#* ## }"
+      globs="${rest%% ## *}"; rest="${rest#* ## }"
+      re="${rest%% ## *}"; why="${rest#* ## }"
+      [ "$why" = "$re" ] && why=""
+      prio="normal"
+      case "$name" in '!'*) prio="high"; name="${name#!}" ;; esac
+      [ "$prio" = "$pass" ] || continue
+      sweep "$name" "$globs" "$re" "$why" "$prio"
+    done < "$file"
+  done
 done
 
 # Merge hygiene in the files the range touches: conflict markers committed.
