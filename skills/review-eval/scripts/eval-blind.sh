@@ -4,8 +4,9 @@
 #   eval-blind.sh <id> <dest>
 #
 # Checks out the case's tip (the change before any finding was fixed) as a detached worktree at <dest>, without the evals
-# directory, and with every line of REVIEW.md that carries the tag "case:<id>" removed (a line the repo wrote down because
-# of that very change would give the answer away). Prints the instructions to hand to the reviewer.
+# directory, and puts a REVIEW.md in it: the repository's current one (or $REVIEW_FILE, for a REVIEW.md kept elsewhere) with
+# every line that carries the tag "case:<id>" removed (a line the repo wrote down because of that very change would give the
+# answer away). Prints the instructions to hand to the reviewer.
 # Remove the worktree afterwards with: git worktree remove --force <dest>
 set -eu
 [ $# -eq 2 ] || { echo "usage: eval-blind.sh <id> <dest>"; exit 2; }
@@ -20,9 +21,15 @@ base="${range%%..*}"; tip="${range##*..}"
 
 git worktree add -q --detach "$dest" "$tip"
 rm -rf "$dest/evals"
-if [ -f "$dest/REVIEW.md" ]; then
-  grep -v "case:$id" "$dest/REVIEW.md" > "$dest/REVIEW.md.blind" || true
-  mv "$dest/REVIEW.md.blind" "$dest/REVIEW.md"
+# The repo's REVIEW.md of today (or $REVIEW_FILE) is what the reviewer would have now, so that is the one it gets: an old tip has none,
+# or an older one. Lines tagged with this case are left out.
+review_file="${REVIEW_FILE:-$top/REVIEW.md}"
+if [ -f "$review_file" ]; then
+  grep -v "case:$id" "$review_file" > "$dest/REVIEW.md" || true
+  echo "REVIEW.md: $(grep -c "case:$id" "$review_file" || true) line(s) tagged case:$id left out" >&2
+else
+  rm -f "$dest/REVIEW.md"
+  echo "no REVIEW.md ($review_file): the reviewer gets the skills only" >&2
 fi
 
 cat <<EOF
