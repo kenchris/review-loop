@@ -77,7 +77,10 @@ function request(method, host, urlPath, headers, payload) {
     const connect = http.request({ host: proxy.hostname, port: proxy.port || 80, method: 'CONNECT', path: `${host}:443`, headers: connectHeaders });
     connect.on('connect', (res, socket) => {
       if (res.statusCode !== 200) { socket.destroy(); reject(new Error(`the proxy answered CONNECT with ${res.statusCode}`)); return; }
-      send({ agent: false, createConnection: () => tls.connect({ socket, servername: host }) });
+      // The connection comes from the agent's createConnection: the request-level option of that name is ignored when an agent is in use.
+      const agent = new https.Agent({ keepAlive: false });
+      agent.createConnection = () => tls.connect({ socket, servername: host });
+      send({ agent });
     });
     connect.on('error', reject);
     connect.end();

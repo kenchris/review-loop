@@ -158,6 +158,9 @@ if command -v node >/dev/null 2>&1; then
   if [ "$(wc -l < "$tmp/t2.jsonl" | tr -d ' ')" = "4" ]; then pass; else fail "threads: all four threads with -AllThreads and no author filter"; fi
   expect "threads: --repo is required and validated" 2 node "$thr/fetch-threads.mjs" --repo nonsense --response-file "$tmp/response.json" --out "$tmp/x.jsonl"
   expect "threads: --repo missing" 2 node "$thr/fetch-threads.mjs" --out "$tmp/y.jsonl"
+  out="$(timeout 60 node "$here/tests/fake-proxy-check.mjs" "$thr/fetch-threads.mjs" 2>&1)"
+  contains "threads: the fetcher asks the proxy to CONNECT" "CONNECT api.github.com:443"
+  contains "threads: and then talks TLS through the tunnel, not straight to GitHub (was: dialled GitHub directly)" "TLS HANDSHAKE THROUGH THE TUNNEL: yes"
 
   export THREADS_LEDGER="$tmp/ledger.json" REVIEWS_DIR="$tmp/reviews"; mkdir -p "$REVIEWS_DIR"
   # the older markdown export (Windows line endings) is read into the same records
