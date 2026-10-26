@@ -160,6 +160,9 @@ expect "command: sweeps, a bad ref" 2 env HOME="$home" bash "$rl" sweeps nope HE
 HOME="$home" expect "install: uninstall" 0 bash "$here/install.sh" --for all --uninstall
 if [ ! -e "$home/.claude/skills/pre-pr-review" ] && [ ! -e "$home/.local/bin/review-loop" ]; then pass; else fail "uninstall: everything removed"; fi
 
+# --- the plugin manifest and VERSION agree
+if [ "$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$here/.claude-plugin/plugin.json")" = "$(tr -d '[:space:]' < "$here/VERSION")" ]; then pass; else fail "plugin.json version must equal VERSION"; fi
+
 # --- every skill is well formed: the name matches the folder (VS Code requires it), a description, a file for every reference named
 for d in "$here"/skills/*/; do
   n="$(basename "$d")"
