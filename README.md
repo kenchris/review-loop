@@ -67,3 +67,7 @@ Apache-2.0, see [LICENSE](LICENSE).
     bash tests/run.sh
 
 Scratch repositories and a scratch `HOME` only; nothing outside the temp directory is touched. It covers the gate, the sweeps, the score log, the eval scripts, the installer and the command, and checks that every lens and sweep is assigned to a reader in the multipass table.
+
+## Learning from the review threads on GitHub
+
+`review-loop threads` turns the review threads on your open pull requests into input for `retro` and for the eval: `fetch` (on a machine that can reach GitHub; needs only node, a token and, behind a proxy, `HTTPS_PROXY`) writes `threads.jsonl`; `ingest` adds it to a ledger that remembers a verdict per thread; `worksheet` lists what is undecided with the nearest self-review report entry; `cases` turns threads you verified and fixed into eval cases. See [`skills/retro/references/threads.md`](skills/retro/references/threads.md). The fetch is tested against a recorded response, not yet against the live API.

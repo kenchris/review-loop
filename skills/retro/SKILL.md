@@ -13,7 +13,7 @@ The self-review gets better only when something about the setup changes: a check
 
 Read, before proposing anything:
 
-- the outside findings of the round (an export of review threads, CI failures, an incident review), each with the file and line and what the outside reviewer said was wrong;
+- the outside findings of the round (an export of review threads, CI failures, an incident review), each with the file and line and what the outside reviewer said was wrong. For review threads on GitHub, `review-loop threads fetch`, then `ingest` and `worksheet` (`references/threads.md`) produce this list with the thread's status, the commit the reviewer saw, and the nearest self-review report entry, and the ledger remembers every decision from earlier rounds;
 - the self-review reports for the same changes (`reviews/`), so each outside finding can be matched to "reported" or "not reported";
 - the repo's existing checks: lint config, CI jobs, hooks, `REVIEW.sweeps`, `REVIEW.md`. A check that exists but is not wired in, or is broken, is itself a finding;
 - `scripts/review-score.sh show` and, if cases exist, `review-eval` results.

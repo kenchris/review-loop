@@ -136,6 +136,54 @@ if [ -f "$tmp/arch/range.diff" ] && [ -f "$tmp/arch/changed-files.txt" ] && [ -f
 if grep -q "keep this" "$tmp/arch/REVIEW.md" && grep -q "keep three" "$tmp/arch/REVIEW.md" && ! grep -q "drop one" "$tmp/arch/REVIEW.md" && ! grep -q "drop two" "$tmp/arch/REVIEW.md"; then pass; else fail "eval: case tags and group tags are dropped, a longer id that merely starts with the case id (c10) is kept"; fi
 unset EVALS_DIR
 
+# --- review threads: the fetcher (PowerShell, test mode) and threads.mjs (Node)
+thr="$here/skills/retro/scripts"
+if command -v node >/dev/null 2>&1; then
+  newrepo
+  A="$(git rev-parse HEAD)"; echo change >> a.txt; git commit -qam change; B="$(git rev-parse HEAD)"
+  node_json() { # id resolved outdated path line author body commit
+    printf '{"id":"%s","isResolved":%s,"isOutdated":%s,"path":"%s","line":%s,"originalLine":%s,"startLine":null,"originalStartLine":null,"comments":{"nodes":[{"databaseId":1,"body":"%s","author":{"login":"%s"},"createdAt":"2026-10-01T00:00:00Z","commit":{"oid":"%s"},"originalCommit":{"oid":"%s"},"replyTo":null}]}}' "$1" "$2" "$3" "$4" "$5" "$5" "$7" "$6" "$8" "$8"
+  }
+  {
+    printf '{"pulls":[{"number":7,"title":"Seven","user":{"login":"alice"},"head":{"ref":"feat","sha":"%s"},"base":{"ref":"main","sha":"%s"}},' "$B" "$A"
+    printf '{"number":8,"title":"Eight","user":{"login":"bob"},"head":{"ref":"other","sha":"%s"},"base":{"ref":"main","sha":"%s"}}],"threads":{' "$B" "$A"
+    printf '"7":[%s,%s,%s],' "$(node_json T-open-1111 false false a.txt 1 copilot-pull-request-reviewer 'This throws on a wrong type. Check it first.' "$B")" \
+      "$(node_json T-done-2222 true false a.txt 1 copilot-pull-request-reviewer 'Already resolved one.' "$B")" \
+      "$(node_json T-human-3333 false true b.txt 40 riju 'Why is this guard missing on the other path?' "$B")"
+    printf '"8":[%s]}}' "$(node_json T-bob-4444 false false c.txt 9 copilot-pull-request-reviewer 'Another one.' "$B")"
+  } > "$tmp/response.json"
+  expect "threads: the fetcher converts a response (test mode), one author" 0 node "$thr/fetch-threads.mjs" --repo o/r --author alice --response-file "$tmp/response.json" --out "$tmp/t1.jsonl"
+  if [ "$(wc -l < "$tmp/t1.jsonl" | tr -d ' ')" = "2" ] && grep -q '"status":"outdated"' "$tmp/t1.jsonl" && grep -q "\"commit_reviewed\":\"$B\"" "$tmp/t1.jsonl"; then pass; else fail "threads: two threads for alice, resolved one left out, status and reviewed commit present"; fi
+  expect "threads: --all-threads keeps resolved ones" 0 node "$thr/fetch-threads.mjs" --repo o/r --all-threads --response-file "$tmp/response.json" --out "$tmp/t2.jsonl"
+  if [ "$(wc -l < "$tmp/t2.jsonl" | tr -d ' ')" = "4" ]; then pass; else fail "threads: all four threads with -AllThreads and no author filter"; fi
+  expect "threads: --repo is required and validated" 2 node "$thr/fetch-threads.mjs" --repo nonsense --response-file "$tmp/response.json" --out "$tmp/x.jsonl"
+  expect "threads: --repo missing" 2 node "$thr/fetch-threads.mjs" --out "$tmp/y.jsonl"
+
+  export THREADS_LEDGER="$tmp/ledger.json" REVIEWS_DIR="$tmp/reviews"; mkdir -p "$REVIEWS_DIR"
+  expect "threads: ingest" 0 node "$thr/threads.mjs" ingest "$tmp/t1.jsonl"
+  contains "threads: two new threads" "2 new"
+  expect "threads: ingesting the same export again adds nothing" 0 node "$thr/threads.mjs" ingest "$tmp/t1.jsonl"
+  contains "threads: nothing new the second time" "0 new"
+  printf '# Review of x\nReviewed-range: a..b\nOpen: 0\n\n## F1  a.txt:3  [state]  confirmed\n' > "$REVIEWS_DIR/r.md"
+  expect "threads: worksheet" 0 node "$thr/threads.mjs" worksheet
+  contains "threads: a human comment is marked" "(human)"
+  contains "threads: a nearby report entry is a hint" "r.md F1"
+  contains "threads: the other thread is a candidate miss" "1 have none"
+  expect "threads: a verdict needs a known value" 2 node "$thr/threads.mjs" verdict 1111 maybe
+  expect "threads: record a verdict by a piece of the id" 0 node "$thr/threads.mjs" verdict 1111 fixed --commit "$B" --note "done"
+  expect "threads: an ambiguous or unknown id is refused" 2 node "$thr/threads.mjs" verdict nothing-like-it fixed
+  expect "threads: list by verdict" 0 node "$thr/threads.mjs" list --verdict fixed
+  contains "threads: one fixed thread listed" "1 thread(s)"
+  expect "threads: cases from verified threads" 0 node "$thr/threads.mjs" cases --evals "$tmp/ev" --repo-dir "$tmp" --prefix t-
+  case_dir="$(ls -d "$tmp"/ev/t-7-* 2>/dev/null | head -1)"
+  if [ -n "$case_dir" ] && grep -q "^Range: $A\.\.$B$" "$case_dir/case.md" && grep -q '^F1 | a.txt:1 | ? | This throws on a wrong type.' "$case_dir/case.md" && ! grep -q "Already resolved" "$case_dir/case.md" && ! grep -q "b.txt" "$case_dir/case.md"; then pass; else fail "threads: a case with the range base..reviewed commit and only the verified finding (not the resolved one, not the undecided one)"; fi
+  expect "threads: an existing case is not overwritten" 0 node "$thr/threads.mjs" cases --evals "$tmp/ev" --repo-dir "$tmp" --prefix t-
+  contains "threads: the existing case is skipped" "exists"
+  unset THREADS_LEDGER REVIEWS_DIR
+else
+  echo "skipping the threads tests: node is needed"
+fi
+
 # --- install.sh and the command
 newrepo; home="$tmp/home"; mkdir -p "$home"
 HOME="$home" expect "install: both targets, command" 0 bash "$here/install.sh" --for all
@@ -157,6 +205,8 @@ expect "command: help ends with the configuration, not code" 0 env HOME="$home" 
 case "$out" in *"set -u"*) fail "help: the output includes a line of code" ;; *) pass ;; esac
 expect "command: an unknown command" 2 env HOME="$home" bash "$rl" nonsense
 expect "command: sweeps, a bad ref" 2 env HOME="$home" bash "$rl" sweeps nope HEAD
+expect "command: threads, an unknown subcommand" 2 env HOME="$home" bash "$rl" threads nonsense
+expect "command: threads fetch needs --repo" 2 env HOME="$home" bash "$rl" threads fetch --out "$tmp/none.jsonl"
 HOME="$home" expect "install: uninstall" 0 bash "$here/install.sh" --for all --uninstall
 if [ ! -e "$home/.claude/skills/pre-pr-review" ] && [ ! -e "$home/.local/bin/review-loop" ]; then pass; else fail "uninstall: everything removed"; fi
 

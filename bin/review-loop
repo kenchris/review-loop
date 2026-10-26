@@ -7,6 +7,8 @@
 #   review-loop gate <base> <ref> [<ref>..]  fail unless review reports cover every commit of <base>..<ref>
 #   review-loop score add|show ...           record and show recall and noise per round
 #   review-loop eval case|blind|record|report ...   the eval set: cases, blind runs, recorded runs, the report
+#   review-loop threads fetch|ingest|list|verdict|worksheet|cases ...   learn from review threads on GitHub (needs node): fetch
+#                                            (where GitHub is reachable), then a ledger, a retro worksheet and eval cases, offline
 #   review-loop doctor                       check the tools, the skills and this repository's setup
 #   review-loop version | help
 #
@@ -25,7 +27,7 @@ home="${REVIEW_LOOP_HOME:-$(cd "$(dirname "$self")/.." && pwd)}"
 pp="$home/skills/pre-pr-review/scripts"
 ev="$home/skills/review-eval/scripts"
 
-usage() { sed -n '2,20p' "$self" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,22p' "$self" | sed 's/^# \{0,1\}//'; }
 
 top="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 cfg="${REVIEW_LOOP_CONFIG:-${top:+$top/.review-loop.env}}"
@@ -141,6 +143,17 @@ JSON
       record) exec bash "$ev/eval-record.sh" "$@" ;;
       report) exec bash "$ev/eval-report.sh" "$@" ;;
       *) echo "usage: review-loop eval case|blind|record|report ..." >&2; exit 2 ;;
+    esac ;;
+
+  threads)
+    command -v node >/dev/null 2>&1 || { echo "review-loop threads: node is needed" >&2; exit 2; }
+    sub="${1:-}"; [ $# -gt 0 ] && shift
+    export REVIEWS_DIR="${REVIEWS_DIR:-${top:+$top/reviews}}" EVALS_DIR="${EVALS_DIR:-${top:+$top/evals}}"
+    case "$sub" in
+      fetch) exec node "$home/skills/retro/scripts/fetch-threads.mjs" "$@" ;;
+      ingest|list|verdict|worksheet) exec node "$home/skills/retro/scripts/threads.mjs" "$sub" "$@" ;;
+      cases) exec node "$home/skills/retro/scripts/threads.mjs" cases ${EVALS_DIR:+--evals "$EVALS_DIR"} "$@" ;;
+      *) echo "usage: review-loop threads fetch|ingest|list|verdict|worksheet|cases ..." >&2; exit 2 ;;
     esac ;;
 
   doctor)
