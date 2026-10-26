@@ -8,15 +8,18 @@ It costs a full read of the diff per group. Use it before handing over a change;
 
 As in SKILL.md section 1. For a stack, run per branch, bottom first, on that branch's own commits. Skip a commit an earlier report already covers.
 
-## 2. Groups (at most three readers)
+## 2. Groups (at most three readers; four when a spec applies)
 
 | Reader | Lenses and sweeps |
 |---|---|
 | 1. Input, limits, cost, tests | lenses 1, 6, 7, 10; sweeps 2, 3, 4, 5 |
 | 2. Error paths, state, concurrency, platform, CI | lenses 2, 3, 9, 11, 17, 18; sweeps 1, 6, 7, 9 |
 | 3. Agreement, claims, dead code, routing, UI | lenses 4, 5, 8, 12, 13, 14, 15, 16; sweeps 8, 10, 11, 12 |
+| 4. Spec (only when the change touches a path of a spec listed in `REVIEW.md`) | lens 19 |
 
 Drop what cannot apply (no UI code: skip lens 12) and say what was dropped.
+
+**The Spec reader.** When the change implements an external specification, a fourth reader checks it against the spec's text and nothing else: it gets the spec text for the sections the touched paths implement (not the whole spec), the path map from `REVIEW.md`, and the version. It reports only findings that quote a requirement; MUST / MUST NOT breaches are Important, SHOULD Nit, MAY is not a finding. This is the one exception to the three-reader cap: say that there are four readers and which model before launching, as always. When no spec applies there is no fourth reader, and reader 3 checks the change against its intent (the PR text and any plan document) as part of lens 14.
 
 ## 3. Launching
 

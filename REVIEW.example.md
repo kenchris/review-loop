@@ -14,6 +14,15 @@ Read by the review skills before they look at a change. Keep it short: a reviewe
 - `installer/` (runs with elevated rights)
 - (Each path where a check protects a resource. For each, name the other doors to the same resource: redirects, retries, the second backend, a nested or scripted caller.)
 
+## Specs we implement
+
+A plan is not a spec. List only external specifications the code must conform to. When you are handed a spec to implement, add or refresh its entry as part of the work, so the next review knows it.
+
+- **Name and version:** ExampleProtocol 2025-06-18 (pin a version or a date, never "latest")
+- **Text:** `docs/specs/example-protocol-2025-06-18.md` (a local copy) or a URL
+- **Implemented by:** `src/protocol/session.cpp` (sections 3 and 4), `src/protocol/auth.cpp` (section 5)
+- **Not yet implemented:** (the known gaps; a review does not report these again)
+
 ## Ignore
 
 - `third_party/`, generated files, lock files, `dist/`.

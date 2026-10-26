@@ -42,6 +42,18 @@ printf 'Reviewed-range: %s..%s\nOpen: 0\n' "$(git rev-parse HEAD~1)" "$(git rev-
 REVIEW_REQUIRE_PATHS='^a\.txt$' REVIEW_REQUIRE_LINE=Casing expect "gate: a required line is missing" 1 bash "$pp/review-gate.sh" HEAD~1 HEAD
 echo "Casing: checked" >> "$REVIEWS_DIR/r.md"
 REVIEW_REQUIRE_PATHS='^a\.txt$' REVIEW_REQUIRE_LINE=Casing expect "gate: the required line is there" 0 bash "$pp/review-gate.sh" HEAD~1 HEAD
+# several required lines from a REVIEW.gate file
+printf 'Reviewed-range: %s..%s\nOpen: 0\nCasing: checked\n' "$(git rev-parse HEAD~1)" "$(git rev-parse HEAD)" > "$REVIEWS_DIR/r.md"
+printf '# comment\nCasing ## ^a\\.txt$\nSpec ## ^a\\.txt$\n' > "$tmp/REVIEW.gate"
+REVIEW_GATE_FILE="$tmp/REVIEW.gate" expect "gate: a second required line (Spec) is missing" 1 bash "$pp/review-gate.sh" HEAD~1 HEAD
+contains "gate: names the missing line" "'Spec: checked'"
+if printf '%s' "$out" | grep -q "'Casing: checked'"; then fail "gate: the Casing line is there and must not be reported"; else pass; fi
+echo "Spec: n/a, nothing in this change implements a spec" >> "$REVIEWS_DIR/r.md"
+REVIEW_GATE_FILE="$tmp/REVIEW.gate" expect "gate: both required lines present" 0 bash "$pp/review-gate.sh" HEAD~1 HEAD
+printf 'Casing without a separator\n' > "$tmp/bad.gate"
+REVIEW_GATE_FILE="$tmp/bad.gate" expect "gate: a malformed gate file is refused" 2 bash "$pp/review-gate.sh" HEAD~1 HEAD
+printf 'Spec ## ^other/\n' > "$tmp/other.gate"
+REVIEW_GATE_FILE="$tmp/other.gate" expect "gate: a required line only applies to its paths" 0 bash "$pp/review-gate.sh" HEAD~1 HEAD
 REVIEW_WAIVE="because" expect "gate: a waiver passes" 0 bash "$pp/review-gate.sh" nope HEAD
 unset REVIEWS_DIR
 
@@ -119,7 +131,7 @@ done
 if [ -x "$home/.local/bin/review-loop" ]; then pass; else fail "install: the command is executable"; fi
 expect "command: version" 0 env HOME="$home" bash "$home/.local/bin/review-loop" version
 expect "command: init" 0 env HOME="$home" bash "$rl" init --vscode
-for f in REVIEW.md REVIEW.sweeps .review-loop.env .vscode/tasks.json; do
+for f in REVIEW.md REVIEW.sweeps REVIEW.gate .review-loop.env .vscode/tasks.json; do
   if [ -e "$tmp/$f" ]; then pass; else fail "init: created $f"; fi
 done
 echo mine > REVIEW.md
@@ -127,6 +139,8 @@ expect "command: init does not overwrite" 0 env HOME="$home" bash "$rl" init --v
 if [ "$(cat REVIEW.md)" = "mine" ]; then pass; else fail "init: REVIEW.md was overwritten"; fi
 if [ -e .vscode/review-loop.tasks.json ]; then pass; else fail "init: a second --vscode writes the tasks beside an existing tasks.json"; fi
 expect "command: doctor" 0 env HOME="$home" bash "$rl" doctor
+expect "command: help ends with the configuration, not code" 0 env HOME="$home" bash "$rl" help
+case "$out" in *"set -u"*) fail "help: the output includes a line of code" ;; *) pass ;; esac
 expect "command: an unknown command" 2 env HOME="$home" bash "$rl" nonsense
 expect "command: sweeps, a bad ref" 2 env HOME="$home" bash "$rl" sweeps nope HEAD
 HOME="$home" expect "install: uninstall" 0 bash "$here/install.sh" --for all --uninstall
@@ -134,9 +148,9 @@ if [ ! -e "$home/.claude/skills/pre-pr-review" ] && [ ! -e "$home/.local/bin/rev
 
 # --- the multipass table assigns every lens and sweep to a reader
 table="$here/skills/pre-pr-review/references/multipass.md"
-lens_text="$(grep -E '^\| [123]\.' "$table" | sed -E 's/;.*//; s/^\|[^|]*\|//')"
+lens_text="$(grep -E '^\| [1234]\.' "$table" | sed -E 's/;.*//; s/^\|[^|]*\|//')"
 sweep_text="$(grep -E '^\| [123]\.' "$table" | sed -E 's/^[^;]*;//')"
-for n in $(seq 1 18); do
+for n in $(seq 1 19); do
   if printf '%s\n' "$lens_text" | grep -Eq "(^|[^0-9])$n([^0-9]|$)"; then pass; else fail "multipass: lens $n belongs to no reader"; fi
 done
 for n in $(seq 1 12); do

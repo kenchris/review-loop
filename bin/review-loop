@@ -16,7 +16,8 @@
 #   REVIEW_SWEEPS   this repo's extra sweeps (default <root>/REVIEW.sweeps)
 #   REVIEWS_DIR     review reports and score.tsv (default <root>/reviews)
 #   EVALS_DIR       eval cases and runs.tsv (default <root>/evals)
-#   REVIEW_REQUIRE_PATHS, REVIEW_REQUIRE_LINE   an extra stated check for commits touching some paths (see review-gate.sh)
+#   REVIEW_GATE_FILE   required report lines per path pattern for the gate (default <root>/REVIEW.gate; see review-gate.sh)
+#   REVIEW_REQUIRE_PATHS, REVIEW_REQUIRE_LINE   the older single pair, still honoured
 set -u
 
 self="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")"
@@ -24,7 +25,7 @@ home="${REVIEW_LOOP_HOME:-$(cd "$(dirname "$self")/.." && pwd)}"
 pp="$home/skills/pre-pr-review/scripts"
 ev="$home/skills/review-eval/scripts"
 
-usage() { sed -n '2,21p' "$self" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,20p' "$self" | sed 's/^# \{0,1\}//'; }
 
 top="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 cfg="${REVIEW_LOOP_CONFIG:-${top:+$top/.review-loop.env}}"
@@ -47,6 +48,11 @@ case "$cmd" in
     mk "$top/REVIEW.sweeps" <(printf '%s\n' \
       '# This repository'"'"'s own sweeps, added to the generic ones. One per line: name ## path globs ## regex (POSIX ERE) ## why' \
       '# example: old-helper ## *.cpp *.h ## old_helper\( ## the helper is being removed; every call is a finding')
+    mk "$top/REVIEW.gate" <(printf '%s\n' \
+      '# Lines a covering review report must state for commits touching these paths. One per line: Name ## ERE of paths' \
+      '# A report then needs "<Name>: checked ..." or "<Name>: n/a <reason>". review-loop gate enforces it.' \
+      '#Casing ## ^src/api/' \
+      '#Spec ## ^src/protocol/')
     mkdir -p "$top/reviews" && echo "ready    $top/reviews/ (review reports and score.tsv)"
     mk "$top/.review-loop.env" <(printf '%s\n' \
       '# review-loop configuration for this repository (shell variable assignments). Everything here is optional.' \
@@ -54,8 +60,7 @@ case "$cmd" in
       '#REVIEW_SWEEPS=$HOME/path/to/REVIEW.sweeps' \
       '#REVIEWS_DIR=$HOME/path/to/reviews' \
       '#EVALS_DIR=$HOME/path/to/evals' \
-      '#REVIEW_REQUIRE_PATHS='"'"'^(src/api/|docs/api)'"'"'     # commits touching these need a stated check ...' \
-      '#REVIEW_REQUIRE_LINE=Casing                    # ... a "Casing: checked" line in a covering report')
+      '#REVIEW_GATE_FILE=$HOME/path/to/REVIEW.gate    # required report lines per path (default: REVIEW.gate at the root)')
     if [ "${1:-}" = "--vscode" ]; then
       mkdir -p "$top/.vscode"
       tasks="$top/.vscode/tasks.json"

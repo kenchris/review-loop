@@ -41,6 +41,7 @@ For every changed file, read the whole function around each hunk, and the caller
 16. **Other doors to the same resource.** For every guard (a URL or domain policy, a scope list, a permission, a sandbox, a token): list the other paths that reach what it protects (redirects, a second client, a proxy that resolves names itself, a nested or scripted caller, a cache read, a retry, the second backend) and check each carries the same scope and check. An empty scope must not mean "everything" on a path that forgot to pass it. Test for parity.
 17. **Policy values on the unhappy machine.** For every policy field the diff accepts: what happens when the state it depends on is missing (a model not loaded, no browser, offline, asleep)? A value accepted but treated as another value, or one that makes an unattended job silently skip, is a finding: implement it, or refuse it with a message; add the scenario as a test; make the waiting state visible.
 18. **CI-only failures.** Rebase onto the target branch (a conflict there is what CI hits), rebuild after it, run the suites for anything the diff touches.
+19. **Spec conformance (only when the change implements an external specification).** The specs a repo implements are listed in `REVIEW.md` under "Specs we implement" (name, pinned version, where the text is, which paths implement which part), or were handed over with the task. A plan or design document is not a spec: it is the intent that lens 14 checks the text against. For each requirement the change touches, check the code against the spec text, in three shapes: a requirement the code omits or only half meets, behaviour the spec forbids (or the change adds beyond it), and something that looks implemented but is wrong. **Quote the requirement and the code line.** A breach of MUST / MUST NOT is Important, SHOULD / SHOULD NOT is Nit, MAY is not a finding. A finding without a quoted rule is dropped. If the diff touches a spec's paths and there is no entry, ask which spec and version before reviewing.
 
 ## 3b. Mechanical sweeps (a design read misses these)
 
@@ -75,6 +76,7 @@ What:    <one sentence: the defect>
 Failure: <input or state -> wrong result>
 Fix:     <concrete change; the test to add>
 Class:   <the class of bug, and the other places to look for it>
+Rule:    <spec findings only: the requirement quoted from the spec, with its section>
 ```
 
 - **Important**: wrong behaviour, a hole, or a false claim that someone will act on. **Nit**: real but small. **Pre-existing**: not introduced by this change; report it, do not count it against the author.
@@ -94,4 +96,4 @@ After each round of outside review, for every finding this review did not catch:
 
 ## 7. Multi-pass mode
 
-`/pre-pr-review multipass <target>` runs up to three independent readers, each looking through one group of lenses, then merges, votes on and verifies what they report. Use it before handing over a change of any size; use the single pass for a quick look at a small fix. Procedure, prompts and report file: `references/multipass.md`.
+`/pre-pr-review multipass <target>` runs up to three independent readers, each looking through one group of lenses (a fourth, for spec conformance, when the change touches a spec listed in `REVIEW.md`), then merges, votes on and verifies what they report. Use it before handing over a change of any size; use the single pass for a quick look at a small fix. Procedure, prompts and report file: `references/multipass.md`.
