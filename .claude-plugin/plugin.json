@@ -1,0 +1,6 @@
+{
+  "name": "review-loop",
+  "description": "Skills for the review loop: self-review before a change goes out, measuring the review, and turning recurring findings into checks.",
+  "version": "0.1.0",
+  "license": "Apache-2.0"
+}
