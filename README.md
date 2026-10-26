@@ -24,9 +24,34 @@ More are planned, see [PLAN.md](PLAN.md).
 | Risk decides how much review a change gets | not yet (planned) |
 | Explainers, so reading diffs is not the only way to learn the code | not yet (`explain-slice`, planned) |
 
+## Install
+
+    git clone <this repository> && cd review-loop
+    ./install.sh              # skills into ~/.claude/skills, the `review-loop` command into ~/.local/bin
+    ./install.sh --link       # the same, but linked to this checkout, so git pull updates them
+    ./install.sh --for all    # also ~/.copilot/skills
+    ./install.sh --project .  # into a project's .claude/skills (and .github/skills with --for all), shared through its repository
+
+Needs bash 4+ and git; on Windows use Git Bash (the installer adds a `review-loop.cmd` for cmd.exe and PowerShell). `./install.sh --uninstall` removes what it installed.
+
 ## Use
 
-Copy or link `skills/pre-pr-review` into `~/.claude/skills/` (or a project's `.claude/skills/`), or install this repository as a plugin. Then ask for a review of a branch, a PR or a range: `/pre-pr-review feature-branch`.
+In a repository:
+
+    review-loop init           # REVIEW.md, REVIEW.sweeps, reviews/ and a config file; never overwrites
+    review-loop doctor         # tools, skills and this repository's setup
+    review-loop sweeps <base> <tip>
+    review-loop gate <base> <ref>
+    review-loop score add <round> <change> <found> <outside-new> <rejected>
+    review-loop eval case new <id> <base> <tip> | blind <id> <dest> | record ... | report
+
+Then ask for a review of a branch, a PR or a range from the agent: `/pre-pr-review feature-branch` (add `multipass` before a hand-over). The command and the skills use the same scripts; a repository can keep its review files elsewhere through `.review-loop.env` (see `review-loop help`).
+
+## VS Code
+
+- **Skills.** VS Code reads [agent skills](https://code.visualstudio.com/docs/agent-customization/agent-skills) from `~/.claude/skills`, `~/.copilot/skills`, `~/.agents/skills`, and from `.claude/skills`, `.github/skills` and `.agents/skills` in the workspace. The default install therefore works in VS Code (Copilot agent mode, and the Claude Code extension, which uses the same folder); `--for copilot` is for a setup without a `.claude` folder, and `chat.agentSkillsLocations` can point VS Code at another folder. Skill names match their folder names, as VS Code requires.
+- **Tasks.** `review-loop init --vscode` writes `.vscode/tasks.json` (or `.vscode/review-loop.tasks.json` to merge by hand, if you have one). Terminal > Run Task offers sweeps, gate, score, eval report and doctor, and asks for the base and tip refs. The sweep hits are reported to the Problems panel as warnings on the added lines, so they show in the editor.
+- The command must be on the PATH of VS Code's terminal (`~/.local/bin` is not on it by default on Windows).
 
 ## Per-repo knowledge: `REVIEW.md`
 
