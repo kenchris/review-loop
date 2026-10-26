@@ -56,3 +56,8 @@ Conflict markers, a stray closing brace or namespace, a test merged without its 
 
 A fix that is larger in the description than in the code; a new guard that does not cover the old route; a fix to a symptom on one path; a caller that ignores the new failure result.
 *Spot it:* review a fix commit as new code, and ask what the fix does not cover.
+
+## An existing function the new code now depends on
+
+New code calls a function that was already there, and relies on its success: it returns true, it reports missing and damaged alike, it ignores the result of its own write. The defect is in code the change did not add, so a search over added lines cannot see it, and an outside reviewer reports it against the new caller.
+*Spot it:* for every existing function the diff starts to call, read it once for its failure paths: what does it return when a read, a parse or a write inside it failed? A "pre-existing" label is a reason to mark the finding Pre-existing, not to skip it.

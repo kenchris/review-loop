@@ -62,6 +62,20 @@ DIFF_SWEEPS_MAX=100 expect "sweeps: a high cap shows every hit" 0 bash "$pp/diff
 if ! printf '%s' "$out" | grep -q "\.\.\. 5 hits" && printf '%s' "$out" | grep -q "a.cpp:6"; then pass; else fail "sweeps: with a high cap all five hits are listed and none is elided"; fi
 git reset -q --hard HEAD~1
 DIFF_SWEEPS_STRICT=1 expect "sweeps: strict mode fails on a hit" 1 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD
+printf '%s\n' \
+  'void h(json p) {' \
+  '    std::string f = p.contains("focus") && p["focus"].is_string() ? p["focus"].get<std::string>() : std::string();' \
+  '    WriteJsonFile(path, doc);' \
+  '    for (const auto& x : p["items"]) use(x);' \
+  '    bool ok = WriteJsonFile(path, doc);' \
+  '}' >> a.cpp
+git commit -qam "patterns for the cpp sweeps"
+expect "sweeps: the new patterns run" 0 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD
+contains "sweeps: a wrong type becoming the default is named" "[wrong-type-becomes-default]"
+contains "sweeps: a dropped write result is named" "[ignored-write-result]"
+contains "sweeps: a loop over a client member is named" "[loop-over-client-member]"
+if printf '%s' "$out" | grep -A3 "\[ignored-write-result\]" | grep -q "bool ok = WriteJsonFile"; then fail "sweeps: a write whose result is kept is not a hit"; else pass; fi
+git reset -q --hard HEAD~1
 printf 'one ## *.txt ## foo ## why\nbad line\n' > own.sweeps
 expect "sweeps: an own sweep file, a malformed line is reported" 0 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD own.sweeps
 contains "sweeps: malformed line named" "not 'name ## globs ## regex ## why'"
