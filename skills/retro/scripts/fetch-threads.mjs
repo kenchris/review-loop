@@ -33,6 +33,8 @@ for (let i = 0; i < argv.length; i++) {
   opt[k] = argv[i + 1] !== undefined && !argv[i + 1].startsWith('--') ? argv[++i] : true;
 }
 const die = (msg, code = 2) => { console.error('fetch-threads: ' + msg); process.exit(code); };
+const started = Date.now();
+const log = (msg) => { if (!opt.quiet) console.error(msg); };   // progress goes to stderr; --quiet turns it off
 const repo = opt.repo === true ? '' : opt.repo;
 if (!repo || !/^[^/\s]+\/[^/\s]+$/.test(repo)) die('--repo owner/name is required');
 const [owner, name] = repo.split('/');
@@ -40,11 +42,11 @@ const out = opt.out && opt.out !== true ? opt.out : 'threads.jsonl';
 
 function token() {
   const t = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
-  if (t) return t.trim();
+  if (t) { log('token: from the environment'); return t.trim(); }
   try {
     const cred = execFileSync('git', ['credential', 'fill'], { input: 'protocol=https\nhost=github.com\n\n', encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] });
     const line = cred.split('\n').find((l) => l.startsWith('password='));
-    if (line) return line.slice('password='.length).trim();
+    if (line) { log('token: from git credential fill'); return line.slice('password='.length).trim(); }
   } catch { /* fall through */ }
   return die('no GitHub token: set GH_TOKEN, or sign in so that git credential fill returns one', 1);
 }
@@ -67,6 +69,9 @@ function request(method, host, urlPath, headers, payload) {
         res.on('end', () => resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf8') }));
       });
       req.on('error', reject);
+      req.setTimeout(30000, () => req.destroy(new Error(`no answer from ${host} within 30 s ` + (proxy
+        ? `(through the proxy ${proxy.hostname}:${proxy.port}: is it the right one?)`
+        : '(connecting directly: if GitHub needs a proxy here, set HTTPS_PROXY)'))));
       if (payload) req.write(payload);
       req.end();
     };
@@ -100,6 +105,7 @@ async function openPulls(tok) {
   for (let page = 1; ; page++) {
     const batch = await api('GET', `/repos/${repo}/pulls?state=open&per_page=100&page=${page}`, null, tok);
     all.push(...batch);
+    log(`open pull requests: page ${page}, ${all.length} so far`);
     if (batch.length < 100) return all;
   }
 }
@@ -140,14 +146,23 @@ async function main() {
     pulls = fixture.pulls || [];
     threadsFor = async (n) => (fixture.threads && fixture.threads[String(n)]) || [];
   } else {
+    const px = viaProxy('api.github.com');
+    log(`repository: ${repo}; proxy: ${px ? px.hostname + ':' + (px.port || 80) : 'none (set HTTPS_PROXY if GitHub needs one)'}`);
     tok = token();
+    log('asking api.github.com for the open pull requests...');
     pulls = await openPulls(tok);
     threadsFor = (n) => threadsOf(n, tok);
   }
   const lines = [];
-  for (const pr of pulls) {
-    if (opt.author && opt.author !== true && (pr.user || {}).login !== opt.author) continue;
-    for (const t of await threadsFor(pr.number)) {
+  const mine = pulls.filter((pr) => !(opt.author && opt.author !== true) || (pr.user || {}).login === opt.author);
+  log(`${pulls.length} open pull request(s)${mine.length !== pulls.length ? `, ${mine.length} by ${opt.author}` : ''}; reading their review threads`);
+  let done = 0;
+  for (const pr of mine) {
+    const before = lines.length;
+    const all = await threadsFor(pr.number);
+    done++;
+    log(`[${done}/${mine.length}] #${pr.number} ${(pr.head || {}).ref || ''}: ${all.length} thread(s) on the pull request`);
+    for (const t of all) {
       if (!t || (!opt['all-threads'] && t.isResolved)) continue;
       const comments = (t.comments && t.comments.nodes) || [];
       if (comments.length === 0) continue;
@@ -175,9 +190,10 @@ async function main() {
         comments: comments.map((c) => ({ id: c.databaseId, author: (c.author || {}).login || '', body: c.body || '', created_at: c.createdAt || '', commit: commitOf(c) })),
       }));
     }
+    log(`      kept ${lines.length - before} (${opt['all-threads'] ? 'all threads' : 'unresolved and outdated only'})`);
   }
   fs.writeFileSync(out, lines.length ? lines.join('\n') + '\n' : '');
-  console.log(`${lines.length} thread(s) from ${pulls.length} open pull request(s) -> ${out}`);
+  console.log(`${lines.length} thread(s) from ${mine.length} open pull request(s) -> ${out} (${((Date.now() - started) / 1000).toFixed(1)} s)`);
 }
 
 main().catch((e) => die(e.message, 1));

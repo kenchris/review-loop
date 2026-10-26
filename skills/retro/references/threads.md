@@ -20,6 +20,7 @@ With the command: `review-loop threads fetch|ingest|list|verdict|worksheet|cases
 - The token is `GH_TOKEN` or `GITHUB_TOKEN`, else the one git holds for github.com (`git credential fill`). No `gh` CLI is needed.
 - Behind a proxy set `HTTPS_PROXY` (and `NO_PROXY`). Node's built-in fetch ignores proxy settings, so the script tunnels through an HTTP proxy itself with `CONNECT`. A system-wide proxy that is not in the environment is not read: copy it into `HTTPS_PROXY`.
 - Default: unresolved and outdated threads of open pull requests. `--all-threads` adds resolved ones.
+- Progress goes to stderr: the repository, the proxy in use (host and port only), where the token came from, then one line per pull request (`[3/12] #898 branch: 5 thread(s)`, and how many were kept) and the elapsed time. `--quiet` turns it off. A request that gets no answer for 30 seconds fails with a message that names the route it used (the proxy, or a direct connection), so a blocked connection does not just hang.
 - Not tested against the live API (only against a recorded response with `--response-file`, which is also how to try the converter without a network). The first live run is the test; the GraphQL query is the `reviewThreads` query from the exporter this replaces.
 
 ### The export (`threads.jsonl`, one JSON object per line)

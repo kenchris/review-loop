@@ -158,6 +158,11 @@ if command -v node >/dev/null 2>&1; then
   if [ "$(wc -l < "$tmp/t2.jsonl" | tr -d ' ')" = "4" ]; then pass; else fail "threads: all four threads with -AllThreads and no author filter"; fi
   expect "threads: --repo is required and validated" 2 node "$thr/fetch-threads.mjs" --repo nonsense --response-file "$tmp/response.json" --out "$tmp/x.jsonl"
   expect "threads: --repo missing" 2 node "$thr/fetch-threads.mjs" --out "$tmp/y.jsonl"
+  expect "threads: the fetcher reports progress on stderr" 0 node "$thr/fetch-threads.mjs" --repo o/r --response-file "$tmp/response.json" --out "$tmp/p.jsonl"
+  contains "threads: a progress line per pull request" "[1/2] #7 feat: 3 thread(s) on the pull request"
+  contains "threads: and how many were kept" "kept 2"
+  expect "threads: --quiet silences the progress" 0 node "$thr/fetch-threads.mjs" --repo o/r --response-file "$tmp/response.json" --out "$tmp/q.jsonl" --quiet
+  case "$out" in *"[1/"*) fail "threads: --quiet still printed progress" ;; *) pass ;; esac
   out="$(timeout 60 node "$here/tests/fake-proxy-check.mjs" "$thr/fetch-threads.mjs" 2>&1)"
   contains "threads: the fetcher asks the proxy to CONNECT" "CONNECT api.github.com:443"
   contains "threads: and then talks TLS through the tunnel, not straight to GitHub (was: dialled GitHub directly)" "TLS HANDSHAKE THROUGH THE TUNNEL: yes"
