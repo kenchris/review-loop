@@ -7,7 +7,7 @@
 #   review-loop gate <base> <ref> [<ref>..]  fail unless review reports cover every commit of <base>..<ref>
 #   review-loop score add|show ...           record and show recall and noise per round
 #   review-loop eval case|blind|record|report ...   the eval set: cases, blind runs, recorded runs, the report
-#   review-loop threads fetch|ingest|list|verdict|worksheet|cases ...   learn from review threads on GitHub (needs node): fetch
+#   review-loop threads sync|fetch|ingest|list|verdict|worksheet|cases ...   learn from review threads on GitHub (needs node): fetch
 #                                            (where GitHub is reachable), then a ledger, a retro worksheet and eval cases, offline
 #   review-loop doctor                       check the tools, the skills and this repository's setup
 #   review-loop version | help
@@ -151,9 +151,13 @@ JSON
     export REVIEWS_DIR="${REVIEWS_DIR:-${top:+$top/reviews}}" EVALS_DIR="${EVALS_DIR:-${top:+$top/evals}}"
     case "$sub" in
       fetch) exec node "$home/skills/retro/scripts/fetch-threads.mjs" "$@" ;;
+      sync)  # fetch + ingest in one step, for a machine that can reach GitHub and holds the ledger
+        tmp="$(mktemp)"; trap 'rm -f "$tmp"' EXIT
+        node "$home/skills/retro/scripts/fetch-threads.mjs" "$@" --out "$tmp" &&
+          node "$home/skills/retro/scripts/threads.mjs" ingest "$tmp" --full ;;
       ingest|list|verdict|worksheet) exec node "$home/skills/retro/scripts/threads.mjs" "$sub" "$@" ;;
       cases) exec node "$home/skills/retro/scripts/threads.mjs" cases ${EVALS_DIR:+--evals "$EVALS_DIR"} "$@" ;;
-      *) echo "usage: review-loop threads fetch|ingest|list|verdict|worksheet|cases ..." >&2; exit 2 ;;
+      *) echo "usage: review-loop threads sync|fetch|ingest|list|verdict|worksheet|cases ..." >&2; exit 2 ;;
     esac ;;
 
   doctor)

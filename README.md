@@ -82,15 +82,33 @@ This checks that a review was written, not that it was good. In CI see [docs/ci.
 
 ### Level 4: learn from the reviews you get (optional)
 
-After a round of outside review (for example Copilot comments on your pull requests), turn what you missed into checks:
+**Why bother.** Your reviewer (a person, Copilot) keeps finding things your own review missed. Without a record, you fix each one and the same kind of miss comes back next round. This level keeps that record and, on request, answers one question: *for each thing we missed, what is the cheapest check that would have caught it?* Typically a one-line search rule in `REVIEW.sweeps` that then runs on every change for free. It is the part that makes the review get better over time. Skip it until you have a few rounds of outside comments to learn from.
 
-    review-loop threads fetch --repo owner/name --out threads.jsonl     where GitHub is reachable
-    review-loop threads ingest threads.jsonl --full
-    review-loop threads worksheet                                       what is undecided
-    review-loop threads verdict <id> fixed --commit <sha>               one per thread (or rejected, missed, deferred)
-    /retro round 26                                                     in the agent: ranked proposals; nothing changes until you agree
+**Do you need the first commands?** Only to get the comments onto your machine. If the machine you work on can reach GitHub, it is one command:
 
-`/review-eval` measures the reviewer on past findings (costs allowance; you start it yourself). Details below.
+    review-loop threads sync --repo owner/name      downloads the open review threads and records them
+
+(Set `GH_TOKEN`, or be signed in to git for github.com; behind a proxy set `HTTPS_PROXY`.) If your work machine cannot reach GitHub, run `review-loop threads fetch --repo owner/name --out threads.jsonl` on one that can, copy the file over, and run `review-loop threads ingest threads.jsonl --full` here. That split is the only reason `fetch` and `ingest` exist separately.
+
+**The verdict** is your decision about one review thread, saved so it is never asked twice. List the undecided ones with their location and what the reviewer said:
+
+    review-loop threads worksheet
+
+Then mark each one (`<id>` is the first characters of the thread id the worksheet shows):
+
+    review-loop threads verdict <id> fixed --commit <sha>     a real problem, fixed in that commit
+    review-loop threads verdict <id> rejected --note "why"    the reviewer was wrong (the reason is remembered)
+    review-loop threads verdict <id> deferred                 real, not now
+
+`fixed` is the one that matters most: those are the findings your own review missed, and they are what `/retro` learns from.
+
+**Then, in the agent:**
+
+    /retro round 26
+
+It reads the `fixed` threads next to your own review report, sorts the misses by cause, and proposes changes ranked by what each would have caught. Nothing is changed until you say which to apply.
+
+Optional: `/review-eval` replays past findings against the reviewer to measure whether a change helped (it costs allowance, so you start it yourself). Details below.
 
 ## Reference: every command
 

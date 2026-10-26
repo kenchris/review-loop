@@ -181,6 +181,9 @@ if command -v node >/dev/null 2>&1; then
   contains "threads: two new threads" "2 new"
   expect "threads: ingesting the same export again adds nothing" 0 node "$thr/threads.mjs" ingest "$tmp/t1.jsonl"
   contains "threads: nothing new the second time" "0 new"
+  rm -f "$THREADS_LEDGER"
+  expect "threads: sync fetches and ingests in one step" 0 bash "$rl" threads sync --repo o/r --author alice --response-file "$tmp/response.json" --quiet
+  contains "threads: sync put the threads in the ledger" "new"
   grep 3333 "$tmp/t1.jsonl" > "$tmp/one.jsonl"
   expect "threads: --full marks threads missing from a complete export as gone" 0 node "$thr/threads.mjs" ingest "$tmp/one.jsonl" --full
   contains "threads: one thread is no longer exported" "1 no longer exported"
