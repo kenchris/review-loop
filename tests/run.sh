@@ -55,6 +55,12 @@ contains "sweeps: the hit is named" "a.cpp:2"
 printf '<<<<<<< x\nfoo\n>>>>>>> y\n' > "with space.txt"; git add .; git commit -qm marker
 expect "sweeps: a conflict marker in a file with a space in its name (was: missed)" 0 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD
 contains "sweeps: the marker is found" "with space.txt"
+for k in aa bb cc dd ee; do printf 'x = j.value("%s", 0);\n' "$k" >> a.cpp; done; git commit -qam many
+DIFF_SWEEPS_MAX=2 expect "sweeps: the cap is respected" 0 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD
+contains "sweeps: ... and the rest is counted" "... 5 hits"
+DIFF_SWEEPS_MAX=100 expect "sweeps: a high cap shows every hit" 0 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD
+if ! printf '%s' "$out" | grep -q "\.\.\. 5 hits" && printf '%s' "$out" | grep -q "a.cpp:6"; then pass; else fail "sweeps: with a high cap all five hits are listed and none is elided"; fi
+git reset -q --hard HEAD~1
 DIFF_SWEEPS_STRICT=1 expect "sweeps: strict mode fails on a hit" 1 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD
 printf 'one ## *.txt ## foo ## why\nbad line\n' > own.sweeps
 expect "sweeps: an own sweep file, a malformed line is reported" 0 bash "$pp/diff-sweeps.sh" HEAD~1 HEAD own.sweeps

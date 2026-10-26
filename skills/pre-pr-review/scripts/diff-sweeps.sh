@@ -12,6 +12,7 @@
 #
 # Warn-only: every hit is a question for the author ("why is this fine?"), not a verdict, and the exit status is 0.
 # DIFF_SWEEPS_STRICT=1 makes it exit 1 when there is any hit (for a repo that wants a CI check).
+# DIFF_SWEEPS_MAX=<n> shows up to n hits per sweep (default 12; a reader that needs the whole list sets it high).
 # Also checked: conflict markers in the files the range touches.
 set -u
 base="${1:?usage: diff-sweeps.sh <base-ref> <tip-ref> [sweep-file ...]}"
@@ -31,6 +32,7 @@ if [ "${#files[@]}" -eq 0 ]; then
 fi
 
 hits=0
+max="${DIFF_SWEEPS_MAX:-12}"
 sweep() {  # name, globs, regex, why
   local name="$1" globs="$2" re="$3" why="$4" out n
   set -f  # the globs are git pathspecs, not shell patterns
@@ -43,8 +45,8 @@ sweep() {  # name, globs, regex, why
   [ -n "$out" ] || return 0
   n=$(printf '%s\n' "$out" | wc -l | tr -d ' ')
   echo "[$name] $why"
-  printf '%s\n' "$out" | head -12
-  [ "$n" -gt 12 ] && echo "  ... $n hits"
+  printf '%s\n' "$out" | head -n "$max"
+  [ "$n" -gt "$max" ] && echo "  ... $n hits"
   hits=$((hits + n))
 }
 
