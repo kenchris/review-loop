@@ -20,6 +20,7 @@ Case: <id>
 Range: <full sha of base>..<full sha of tip>     # the change as it was reviewed, before any finding was fixed
 Source: <outside reviewer | incident | audit, with a link or a number>
 Date: <yyyy-mm-dd>
+Groups: <optional: tags of the round or batch this case belongs to, space separated>
 
 Findings (one per line: id | path:line | class | the defect, in a sentence):
 

@@ -128,6 +128,12 @@ printf '# R\n- keep this\n- drop this case:c1\n' > "$tmp/REVIEW.md"
 REVIEW_FILE="$tmp/REVIEW.md" expect "eval: blind checkout" 0 bash "$ev/eval-blind.sh" c1 "$tmp/blind"
 if [ -f "$tmp/blind/REVIEW.md" ] && grep -q "keep this" "$tmp/blind/REVIEW.md" && ! grep -q "drop this" "$tmp/blind/REVIEW.md" && [ ! -e "$tmp/blind/evals" ]; then pass; else fail "eval: the blind REVIEW.md keeps the other lines, drops the case's, and has no evals dir"; fi
 git worktree remove --force "$tmp/blind" 2>/dev/null
+# archive mode, and a group tag in a case
+printf 'Groups: g1\n' >> "$EVALS_DIR/c1/case.md"
+printf '# R\n- keep this\n- drop one case:c1\n- drop two case:g1\n- keep three case:c10\n' > "$tmp/REVIEW.md"
+REVIEW_FILE="$tmp/REVIEW.md" expect "eval: archive blind export" 0 bash "$ev/eval-blind.sh" --archive c1 "$tmp/arch"
+if [ -f "$tmp/arch/range.diff" ] && [ -f "$tmp/arch/changed-files.txt" ] && [ -f "$tmp/arch/_skill/SKILL.md" ] && [ -f "$tmp/arch/_sweep-hits.txt" ] && [ ! -e "$tmp/arch/.git" ] && [ ! -e "$tmp/arch/evals" ]; then pass; else fail "eval: an archive has the patch, the file list, the skill text and the sweep hits, and no history"; fi
+if grep -q "keep this" "$tmp/arch/REVIEW.md" && grep -q "keep three" "$tmp/arch/REVIEW.md" && ! grep -q "drop one" "$tmp/arch/REVIEW.md" && ! grep -q "drop two" "$tmp/arch/REVIEW.md"; then pass; else fail "eval: case tags and group tags are dropped, a longer id that merely starts with the case id (c10) is kept"; fi
 unset EVALS_DIR
 
 # --- install.sh and the command
