@@ -80,35 +80,16 @@ Save the multipass report (`/pre-pr-review multipass my-branch` writes it to `re
 
 This checks that a review was written, not that it was good. In CI see [docs/ci.md](docs/ci.md).
 
-### Level 4: learn from the reviews you get (optional)
+### Level 4: let the reviews you get make the next review better (optional)
 
-**Why bother.** Your reviewer (a person, Copilot) keeps finding things your own review missed. Without a record, you fix each one and the same kind of miss comes back next round. This level keeps that record and, on request, answers one question: *for each thing we missed, what is the cheapest check that would have caught it?* Typically a one-line search rule in `REVIEW.sweeps` that then runs on every change for free. It is the part that makes the review get better over time. Skip it until you have a few rounds of outside comments to learn from.
+Every outside comment on your pull requests is a check you did not have. This level turns them into one.
 
-**Do you need the first commands?** Only to get the comments onto your machine. If the machine you work on can reach GitHub, it is one command:
+    review-loop threads sync --repo owner/name                 download your open review threads
+    review-loop threads worksheet                              what is undecided
+    review-loop threads verdict <id> fixed --commit <sha>      decide each (or rejected, deferred)
+    /retro round 26                                            in the agent: what would have caught these?
 
-    review-loop threads sync --repo owner/name      downloads the open review threads and records them
-
-(Set `GH_TOKEN`, or be signed in to git for github.com; behind a proxy set `HTTPS_PROXY`.) If your work machine cannot reach GitHub, run `review-loop threads fetch --repo owner/name --out threads.jsonl` on one that can, copy the file over, and run `review-loop threads ingest threads.jsonl --full` here. That split is the only reason `fetch` and `ingest` exist separately.
-
-**The verdict** is your decision about one review thread, saved so it is never asked twice. List the undecided ones with their location and what the reviewer said:
-
-    review-loop threads worksheet
-
-Then mark each one (`<id>` is the first characters of the thread id the worksheet shows):
-
-    review-loop threads verdict <id> fixed --commit <sha>     a real problem, fixed in that commit
-    review-loop threads verdict <id> rejected --note "why"    the reviewer was wrong (the reason is remembered)
-    review-loop threads verdict <id> deferred                 real, not now
-
-`fixed` is the one that matters most: those are the findings your own review missed, and they are what `/retro` learns from.
-
-**Then, in the agent:**
-
-    /retro round 26
-
-It reads the `fixed` threads next to your own review report, sorts the misses by cause, and proposes changes ranked by what each would have caught. Nothing is changed until you say which to apply.
-
-Optional: `/review-eval` replays past findings against the reviewer to measure whether a change helped (it costs allowance, so you start it yourself). Details below.
+[What you get from it](#what-you-get-from-outside-review), and the [full walkthrough](docs/learning-from-reviews.md).
 
 ## Reference: every command
 
@@ -168,6 +149,19 @@ Apache-2.0, see [LICENSE](LICENSE).
 
 Scratch repositories and a scratch `HOME` only; nothing outside the temp directory is touched. It covers the gate, the sweeps, the score log, the eval scripts, the installer and the command, and checks that every lens and sweep is assigned to a reader in the multipass table.
 
-## Learning from the review threads on GitHub
+## What you get from outside review
 
-`review-loop threads` turns the review threads on your open pull requests into input for `retro` and for the eval: `fetch` (on a machine that can reach GitHub; needs only node, a token and, behind a proxy, `HTTPS_PROXY`) writes `threads.jsonl`; `ingest` adds it to a ledger that remembers a verdict per thread; `worksheet` lists what is undecided with the nearest self-review report entry; `cases` turns threads you verified and fixed into eval cases. See [`skills/retro/references/threads.md`](skills/retro/references/threads.md). The fetch is tested against a recorded response, not yet against the live API.
+Without this, the same thing happens every round: a reviewer finds things you missed, you fix them, and the next change gets the same kind of comment. The fixes disappear into the pull request and nothing stops the next miss.
+
+With it, each round leaves something behind:
+
+- **A record, not a pile of comments.** Every thread is decided once (fixed, wrong, not now) and never asked twice. A round of a hundred threads does not start from a hundred undecided ones; it starts from what is new.
+- **Misses turn into checks that run for free.** `/retro` asks, for each real miss, what the cheapest check would have been, and ranks the answers by how many misses each would have caught. Typically a one-line search rule that flags the pattern on every future change (no model, no allowance), a single line in `REVIEW.md` for a judgement call, or deleting a line that never helped. You choose which to apply.
+- **You find out which checks pay.** Fixed findings can become test cases, so `/review-eval` can tell you whether a change to the review setup caught more or only added noise.
+- **Wrong comments are remembered too.** A rejected thread keeps your reason, so the reviewer's noise is measured and not fixed twice.
+
+A real round: nine Copilot comments on three pull requests, eight of them right. `/retro` sorted them by cause. Three were things the review lenses already covered but a reader skipped; one was a pattern a one-line search would have found (a pointer cast with no family check); one was a deleted test file nobody had noticed. It came back with a short ranked list of changes to the review setup, instead of nine fixes that teach the next review nothing.
+
+It pays off after a few rounds; with one or two comments there is nothing to learn from yet. Start with `review-loop threads sync`.
+
+**Full guide:** [docs/learning-from-reviews.md](docs/learning-from-reviews.md): setup, each command, what every verdict means, what `/retro` does with them, and what to do when the fetch fails. File formats: [skills/retro/references/threads.md](skills/retro/references/threads.md).
