@@ -1,6 +1,6 @@
 # review-loop
 
-Claude Code skills for the review loop: check a change before it goes out, measure how well the check works, and turn recurring findings into checks that run.
+Skills for coding agents, for the review loop: check a change before it goes out, measure how well the check works, and turn recurring findings into checks that run. They are plain `SKILL.md` skills, so they work wherever an agent loads that format: Claude Code, VS Code (GitHub Copilot's agent mode and the Claude Code extension), and other agents that read skills from a folder. The scripts need only bash and git, so they also run on their own, from a terminal or an editor task.
 
 | Skill | What it does |
 |---|---|

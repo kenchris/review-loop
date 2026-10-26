@@ -1,6 +1,6 @@
 # review-loop: plan
 
-A small set of Claude Code skills for the review loop around a change: check it yourself before it goes out, measure how well that check works, and turn what the reviewers (people, bots, CI) keep finding into checks that run.
+A small set of coding-agent skills (the SKILL.md format: Claude Code, VS Code, and others) for the review loop around a change: check it yourself before it goes out, measure how well that check works, and turn what the reviewers (people, bots, CI) keep finding into checks that run.
 
 ## Principles
 
