@@ -6,6 +6,7 @@ Claude Code skills for the review loop: check a change before it goes out, measu
 |---|---|
 | `pre-pr-review` | Reviews a branch or range through a fixed set of lenses and mechanical sweeps, verifies every finding before reporting it, and writes a report. Single pass for a small change, multi-pass (up to three readers) before handing something over, plus a spec-conformance reader when the change implements an external specification listed in `REVIEW.md`. |
 | `review-eval` | Keeps verified past findings as test cases, runs the reviewer blind on them, and records recall and noise, so a change to the lenses is kept only if it measurably helped. You invoke it yourself (`disable-model-invocation`): it spawns readers and costs allowance. |
+| `retro` | After a round of outside review, works out why each miss happened and proposes changes to the review setup, ranked by severity: a sweep or lint rule for what is mechanical, a `REVIEW.md` line only for judgement calls, deletion of lines that change nothing. You invoke it yourself; it proposes before it changes anything. |
 
 More are planned, see [PLAN.md](PLAN.md).
 
@@ -20,6 +21,7 @@ More are planned, see [PLAN.md](PLAN.md).
 | Fix what the reviewer keeps flagging at the source: a lint rule, a sweep, a doc line | `scripts/diff-sweeps.sh`, `REVIEW.sweeps`, "Keep it learning" |
 | A review that converges: capped cycles, re-review the diff only, fix the class | `pre-pr-review` section 1 and multipass section 6 |
 | Past incidents and findings are the eval; every change to the reviewer is rescored; noise is measured | `review-eval`, `scripts/review-score.sh` |
+| After each round, turn what the reviewers found into a check, a pointer or a deletion, ranked by what it would have caught | `retro` |
 | Risk decides how much review a change gets | not yet (planned) |
 | Explainers, so reading diffs is not the only way to learn the code | not yet (`explain-slice`, planned) |
 

@@ -154,6 +154,16 @@ expect "command: sweeps, a bad ref" 2 env HOME="$home" bash "$rl" sweeps nope HE
 HOME="$home" expect "install: uninstall" 0 bash "$here/install.sh" --for all --uninstall
 if [ ! -e "$home/.claude/skills/pre-pr-review" ] && [ ! -e "$home/.local/bin/review-loop" ]; then pass; else fail "uninstall: everything removed"; fi
 
+# --- every skill is well formed: the name matches the folder (VS Code requires it), a description, a file for every reference named
+for d in "$here"/skills/*/; do
+  n="$(basename "$d")"
+  if [ "$(sed -n 's/^name:[[:space:]]*//p' "$d/SKILL.md" | head -1)" = "$n" ]; then pass; else fail "skill $n: the name in SKILL.md must equal the folder name"; fi
+  if sed -n '1,/^---$/p;' "$d/SKILL.md" | grep -q '^description: .\{40,\}'; then pass; else fail "skill $n: needs a description of some length"; fi
+  for ref in $(grep -o 'references/[A-Za-z0-9._-]*\.md' "$d/SKILL.md" | sort -u); do
+    if [ -f "$d/$ref" ]; then pass; else fail "skill $n: SKILL.md names $ref, which does not exist"; fi
+  done
+done
+
 # --- the multipass table assigns every lens and sweep to a reader
 table="$here/skills/pre-pr-review/references/multipass.md"
 lens_text="$(grep -E '^\| [1234]\.' "$table" | sed -E 's/;.*//; s/^\|[^|]*\|//')"

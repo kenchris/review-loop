@@ -46,3 +46,5 @@ Decided:
 7. **Pruning `REVIEW.md`:** judged by the eval (remove or merge lines, rescore the cases that share the class, keep the cut only if recall did not fall). Needs more cases first: turn the fix commits of the last two rounds into cases.
 
 Order: (a) Spec axis in the skill and the multipass doc, the REVIEW.md section; (b) generalised gate with tests; (c) invocation flag on review-eval; (d) cases from the round fix commits; (e) `retro`, `triage`, a gated fix procedure and `risk-tier`, each after its design is agreed.
+
+(Done 2026-10-26: step (e) `retro`. Still to do: the cases from the round fix commits and the pruning they judge, `triage`, a gated fix procedure, `risk-tier`, `explain-slice`.)
