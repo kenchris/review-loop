@@ -26,6 +26,12 @@ Drop what cannot apply (no UI code: skip lens 12) and say what was dropped.
 - **Say how many readers and which model before launching**, and ask first when the diff is over about 1,500 changed lines.
 - Use the cheapest model that can read code. Do the verification in the main session, where judgement is needed.
 - **A share that is only documentation** (docs, READMEs, plans, comments) needs claim-checking against the code, not deep reasoning: use the cheapest model that can read (a small one such as haiku) for it, and keep the stronger model for code shares and for the verification step. Say which model each reader gets before launching.
+- **Suggest a model per reader from the complexity of its share**, and say the choice before launching (the owner can override it). A starting rule:
+  - **Cheapest (haiku-class):** documentation, READMEs, plans, comments; tests and fixtures; thin glue and renames; sweep-hit triage.
+  - **Mid (sonnet-class):** ordinary application code, UI, request handlers, storage and config code.
+  - **Strongest (opus-class):** a share that touches a guard listed in `REVIEW.md`, concurrency and locking, parsers of untrusted input, handle and process code, cryptography or tokens, and the Spec reader (it must hold a specification and the code at once). Use it for the verification step too.
+  - Size raises the tier: a share over about 1,500 changed lines of non-trivial code goes up one level, or is split.
+  - This is a prior, not a finding. The first baseline used the cheapest model everywhere and recalled 37% on code shares; whether a stronger model recalls more, and for what cost, is exactly what `review-eval` measures: run the same cases under a run label per model and compare with `eval-report.sh diff`.
 - Give each reader a file list, not the whole change: split a big change by directory so no reader has to read thousands of lines.
 - Launch together so they run in parallel, unless the usage allowance is low: then one after another, and stop when the first report shows the extra readers are not finding more.
 
