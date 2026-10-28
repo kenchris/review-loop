@@ -1,6 +1,7 @@
 ---
 name: triage
-description: Decide the review threads of a round without doing it one thread at a time. Reads every undecided thread (from Copilot, CI bots or people) against the code, proposes a verdict for each with the evidence, and records the ones you confirm in a single call. Use after `review-loop threads sync`, before `/retro`, when a round has more undecided threads than you want to decide by hand.
+description: Decide the review threads of a round without doing it one thread at a time. Reads every undecided thread (from Copilot, CI bots or people) against the code, proposes a verdict for each with the evidence, and records the ones you confirm in a single call. Use after `review-loop threads sync`, before `/retro`, when a round has more undecided threads than you want to decide by hand. Not for reviewing a change (use `pre-pr-review`), and not for working out why a review missed something (use `retro`, after the threads are decided).
+license: Apache-2.0
 argument-hint: "[PR numbers]"
 disable-model-invocation: true
 ---

@@ -170,5 +170,5 @@ Apache-2.0, see [LICENSE](LICENSE).
 
     bash tests/run.sh
 
-Scratch repositories and a scratch `HOME` only; nothing outside the temp directory is touched. It covers the gate, the sweeps, the score log, the eval scripts, the installer and the command, and checks that every lens and sweep is assigned to a reader in the multipass table.
+Scratch repositories and a scratch `HOME` only; nothing outside the temp directory is touched. It covers the gate, the sweeps, the score log, the eval scripts, the installer and the command, and checks that every lens and sweep is assigned to a reader in the multipass table. It also lints the skills against the [Agent Skills specification](https://agentskills.io/specification): a valid name that matches the folder, a description of at most 1024 characters, a `SKILL.md` of at most 500 lines, and no named `references/` or `scripts/` file that is missing.
 

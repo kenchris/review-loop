@@ -1,6 +1,7 @@
 ---
 name: retro
-description: After a round of outside review (people, bots, CI, an incident), work out why the self-review missed what it missed and propose changes to the review setup, ranked by severity: a sweep or lint rule for what is mechanical, a REVIEW.md line for judgement calls, deletion of lines that change nothing. Use after outside reviewers raised findings the self-review did not, after an incident, or when REVIEW.md or the lenses have grown long.
+description: After a round of outside review (people, bots, CI, an incident), work out why the self-review missed what it missed and propose changes to the review setup, ranked by severity: a sweep or lint rule for what is mechanical, a REVIEW.md line for judgement calls, deletion of lines that change nothing. Use after outside reviewers raised findings the self-review did not, after an incident, or when REVIEW.md or the lenses have grown long. Not for deciding thread verdicts (use `triage` first: `retro` learns from those decisions), and not for reviewing a change (use `pre-pr-review`).
+license: Apache-2.0
 argument-hint: "[round | PR numbers | path to the findings] [--apply]"
 disable-model-invocation: true
 ---
@@ -16,7 +17,7 @@ Read, before proposing anything:
 - the outside findings of the round (an export of review threads, CI failures, an incident review), each with the file and line and what the outside reviewer said was wrong. For review threads on GitHub, `review-loop threads fetch`, then `ingest` and `worksheet` (`references/threads.md`) produce this list with the thread's status, the commit the reviewer saw, and the nearest self-review report entry, and the ledger remembers every decision from earlier rounds;
 - the self-review reports for the same changes (`reviews/`), so each outside finding can be matched to "reported" or "not reported";
 - the repo's existing checks: lint config, CI jobs, hooks, `REVIEW.sweeps`, `REVIEW.md`. A check that exists but is not wired in, or is broken, is itself a finding;
-- `scripts/review-score.sh show` and, if cases exist, `review-eval` results.
+- `review-loop score show` and, if cases exist, `review-eval` results.
 
 Done when every outside finding is in a table with one of three verdicts: **caught** (the self-review reported it), **missed**, or **rejected** (the outside reviewer was wrong; say why).
 
@@ -55,7 +56,7 @@ Check:    <how to know it works: the eval case or test it becomes, and the sweep
 
 End with the round's numbers (found, missed, rejected, recall, noise), and the misses no cheap change covers, listed honestly as "still missed".
 
-Propose first; apply on agreement (`--apply` after the owner has seen the list). After applying: add each verified miss to the eval cases, rescore the cases that share the class, and record the round with `review-score.sh`.
+Propose first; apply on agreement (`--apply` after the owner has seen the list). After applying: add each verified miss to the eval cases, rescore the cases that share the class, and record the round with `review-loop score add <round> <change> <found> <outside-new> <rejected>`.
 
 ## Rules
 

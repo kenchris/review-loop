@@ -1,6 +1,7 @@
 ---
 name: pre-pr-review
-description: Review a branch, PR or commit range the way a careful external reviewer would, before it goes out, so the findings are fixed in the same round instead of arriving one batch at a time. Use before pushing or handing over a change, when asked for a self-review or pre-PR review, and after a fix round (fix commits get reviewed too).
+description: Review a branch, PR or commit range the way a careful external reviewer would, before it goes out, so the findings are fixed in the same round instead of arriving one batch at a time. Use before pushing or handing over a change, when asked for a self-review or pre-PR review, and after a fix round (fix commits get reviewed too). Not for deciding the threads of outside reviewers (use `triage`), and not for working out why a review missed something (use `retro`).
+license: Apache-2.0
 argument-hint: "[PR number | branch | base..head | 'stack'] [multipass] [--fix]"
 ---
 
