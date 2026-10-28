@@ -68,7 +68,7 @@ In a terminal, in the repository:
     review-loop init
     review-loop doctor
 
-`init` creates `REVIEW.md` (what failure means here, what to ignore, what guards something), `REVIEW.sweeps` (your own search rules) and `reviews/` (saved reports). It never overwrites. Edit `REVIEW.md` a little: the reviewer reads it first. Add `--vscode` to also get editor tasks.
+`init` creates `REVIEW.md` (what failure means here, what to ignore, what guards something), `REVIEW.sweeps` (your own search rules) and `reviews/` (saved reports). It never overwrites. Edit `REVIEW.md` a little: the reviewer reads it first. Add `--vscode` to also get editor tasks. To try this on a project without adding any file to it, keep these files in a separate folder: [docs/private-setup.md](docs/private-setup.md).
 
 You can now also run the mechanical checks alone, without an agent and without cost:
 
@@ -112,7 +112,7 @@ It pays off after a few rounds; with one or two comments there is nothing to lea
 
 ## Reference: every command
 
-A repository can keep its review files elsewhere through `.review-loop.env` (see `review-loop help`). The commands and the skills use the same scripts.
+A repository can keep its review files elsewhere through `.review-loop.env` (see `review-loop help`); [docs/private-setup.md](docs/private-setup.md) shows how to try review-loop on a project without adding any file to it. The commands and the skills use the same scripts.
 
 There are two kinds of thing to type, and they run in different places. **Slash commands** (`/pre-pr-review`, `/retro`, `/review-eval`) are typed to the agent: they start a skill, where the agent reads and reasons. **Terminal commands** (`review-loop ...`, `fetch-threads.bat`) are typed in a shell: they are plain scripts that make no model call, and the agent can run them for you if you ask ("run the gate for sched-7 to sched-9").
 
