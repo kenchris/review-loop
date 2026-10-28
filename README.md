@@ -7,6 +7,7 @@ Skills for coding agents, for the review loop: check a change before it goes out
 | `pre-pr-review` | Reviews a branch or range through a fixed set of lenses and mechanical sweeps, verifies every finding before reporting it, and writes a report. Single pass for a small change, multi-pass (up to three readers) before handing something over, plus a spec-conformance reader when the change implements an external specification listed in `REVIEW.md`. |
 | `review-eval` | Keeps verified past findings as test cases, runs the reviewer blind on them, and records recall and noise, so a change to the lenses is kept only if it measurably helped. You invoke it yourself (`disable-model-invocation`): it spawns readers and costs allowance. |
 | `retro` | After a round of outside review, works out why each miss happened and proposes changes to the review setup, ranked by severity: a sweep or lint rule for what is mechanical, a `REVIEW.md` line only for judgement calls, deletion of lines that change nothing. You invoke it yourself; it proposes before it changes anything. |
+| `triage` | After `review-loop threads sync`, reads every undecided review thread (from Copilot, CI bots or people) against the code, proposes a verdict for each with the evidence, and records the ones you confirm in a single call: one confirmation for a round instead of one command per thread. You invoke it yourself; it never posts to GitHub or changes code. |
 
 More are planned, see [PLAN.md](PLAN.md).
 
@@ -87,15 +88,16 @@ This checks that a review was written, not that it was good. In CI see [docs/ci.
 Every outside comment on your pull requests is a check you did not have. This level turns them into one.
 
     review-loop threads sync --repo owner/name                 download your open review threads
-    review-loop threads worksheet                              what is undecided
-    review-loop threads verdict <id> fixed --commit <sha>      decide each (or rejected, deferred)
+    /triage                                                    in the agent: a proposed verdict for every thread, you confirm once
     /retro round 26                                            in the agent: what would have caught these?
+
+To decide by hand instead: `review-loop threads worksheet` lists what is undecided and `review-loop threads verdict <id> fixed --commit <sha>` (or `rejected`, `deferred`) records one thread.
 
 [What you get from it](#what-you-get-from-outside-review), and the [full walkthrough](docs/learning-from-reviews.md).
 
 ## What you get from outside review
 
-Without this, the same thing happens every round: a reviewer finds things you missed, you fix them, and the next change gets the same kind of comment. The fixes disappear into the pull request and nothing stops the next miss.
+Without this, the same thing happens every round: a reviewer finds things you missed, you fix them, and the next change gets the same kind of comment. If Copilot or CI review runs on every push, it happens on every push: you fix, you push, and the next round finds something else, which feels like a loop with no end. The aim of this level is fewer findings after each push. The fixes disappear into the pull request and nothing stops the next miss.
 
 With it, each round leaves something behind:
 
@@ -116,7 +118,7 @@ A repository can keep its review files elsewhere through `.review-loop.env` (see
 
 There are two kinds of thing to type, and they run in different places. **Slash commands** (`/pre-pr-review`, `/retro`, `/review-eval`) are typed to the agent: they start a skill, where the agent reads and reasons. **Terminal commands** (`review-loop ...`, `fetch-threads.bat`) are typed in a shell: they are plain scripts that make no model call, and the agent can run them for you if you ask ("run the gate for sched-7 to sched-9").
 
-`/retro` and `/review-eval` are user-invoked only (they spend allowance, and `retro` proposes changes to the review setup), so in Claude Code type the slash command; the agent will not start them on its own. Asking in plain words ("run a retro on round 26 from the ledger") also works if the agent is told to follow the skill, but the slash form is the reliable one.
+`/retro`, `/triage` and `/review-eval` are user-invoked only (they spend allowance, and `retro` proposes changes to the review setup and `triage` writes decisions to the ledger), so in Claude Code type the slash command; the agent will not start them on its own. Asking in plain words ("run a retro on round 26 from the ledger") also works if the agent is told to follow the skill, but the slash form is the reliable one.
 
 | You want | Where | Type | What happens |
 |---|---|---|---|
@@ -126,6 +128,7 @@ There are two kinds of thing to type, and they run in different places. **Slash 
 | The mechanical checks alone | terminal | `review-loop sweeps <base> <tip>` | the added lines run through the sweeps; each hit is a question; no model |
 | To check a hand-over is covered | terminal | `review-loop gate <base> <ref>` | fails unless a report with `Open: 0` covers every commit (and any required line); not a slash command, and it does not review anything: it checks that a review was written |
 | The threads of a round, and your decisions | terminal | `review-loop threads fetch / ingest / worksheet / verdict` | the export, the ledger and the worksheet (see below); no model |
+| To decide a round's threads without one command each | agent | `/triage [PR numbers]` (after `threads sync`) | a proposed verdict per thread with the evidence; you confirm once; recorded with `review-loop threads verdict --batch`; nothing is posted or changed |
 | To learn from a round of outside review | agent | `/retro round 26` (after the threads steps below) | ranked proposals for the review setup; nothing is changed until you agree (`--apply` after) |
 | To measure the reviewer | agent | `/review-eval report`, `/review-eval run <case>` | recall and noise per run, from past findings as test cases |
 | To record and read the scores | terminal | `review-loop score add ...`, `review-loop eval report` | the numbers only |
@@ -134,11 +137,11 @@ There are two kinds of thing to type, and they run in different places. **Slash 
 
 1. On a machine that can reach GitHub: `review-loop threads fetch --repo owner/name --out threads.jsonl` (progress and the proxy in use are printed; `HTTPS_PROXY` if needed).
 2. On the machine you work on: `review-loop threads ingest threads.jsonl --full`, then `review-loop threads worksheet` for what is undecided, each with the nearest self-review report entry.
-3. Decide each thread: `review-loop threads verdict <id> fixed --commit <sha>` (or `rejected`, `caught`, `missed`, `deferred`).
+3. Decide each thread. In the agent, `/triage` proposes a verdict for every one with the evidence and records the ones you confirm. By hand: `review-loop threads verdict <id> fixed --commit <sha>` (or `rejected`, `caught`, `missed`, `deferred`).
 4. In the agent: `/retro round 26`. It sorts the misses by cause, and proposes the cheapest change that would have caught each: a sweep, a pointer, a lens change, or a deletion. Read the list, say which to apply.
 5. Optional: `review-loop threads cases --evals evals --repo-dir . --tag` turns the threads you verified and fixed into eval cases, and `/review-eval` rescoring shows whether a change helped.
 
-Arguments: `/pre-pr-review [PR number | branch | base..head | stack] [multipass] [--fix]`, `/retro [round | PR numbers | path to the findings] [--apply]`, `/review-eval [new-case | run <case> | report | diff <runA> <runB>]`.
+Arguments: `/pre-pr-review [PR number | branch | base..head | stack] [multipass] [--fix]`, `/retro [round | PR numbers | path to the findings] [--apply]`, `/triage [PR numbers]`, `/review-eval [new-case | run <case> | report | diff <runA> <runB>]`.
 
 ## CI (GitHub Actions)
 

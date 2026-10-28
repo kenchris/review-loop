@@ -49,7 +49,7 @@ With the command: `review-loop threads fetch|ingest|list|verdict|worksheet|cases
 | `missed` | real, and the self-review did not report it |
 | `deferred` | real, decided not now |
 
-`threads.mjs verdict <piece of the id> <verdict> [--commit sha] [--note text]` records one. Because the ledger remembers, a later export shows only what is new, and a round does not start from 100 undecided threads.
+`threads.mjs verdict <piece of the id> <verdict> [--commit sha] [--note text]` records one. `threads.mjs verdict --batch <file.tsv>` records many: one decision per line, `<id piece>` TAB `<verdict>` TAB `<commit or ->` TAB `<note or ->`; every line is checked first and nothing is written if one is wrong. The `triage` skill uses it. Because the ledger remembers, a later export shows only what is new, and a round does not start from 100 undecided threads.
 
 ## 3. The worksheet and the cases
 

@@ -20,7 +20,7 @@ A small set of coding-agent skills (the SKILL.md format: Claude Code, VS Code, a
 
 1. `pre-pr-review`: lenses, mechanical sweeps, verify-before-report, severity and vote, cycle cap, report format. (done in this commit)
 2. `review-eval`: eval-set format (finding, commit before the fix, where the bug is), a blind-run setup, a recorder and a recall and noise report. (done)
-3. `triage`: import an external reviewer's threads, group them by class, mark each fix / reply-only / reject, fix the class.
+3. `triage`: read each undecided review thread against the code, propose a verdict with the evidence, record the confirmed ones in one call (`threads verdict --batch`). (done: it proposes and records verdicts; grouping by class and a fixed-class pass are still open)
 4. `sweeps`: a skill of its own for growing the sweep files (the script and the first sweep files ship with `pre-pr-review` already; the gate and score scripts too).
 5. `explain-slice`: an up-to-date explainer for a module, so reading diffs is not the only way to learn the code.
 6. `risk-tier`: classify a change by the paths it touches (from `REVIEW.md`) into quick, standard or deep review, and name the paths that always need a person.
