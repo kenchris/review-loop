@@ -6,6 +6,7 @@
 //   threads.mjs list [--verdict v] [--pr n] [--status s]  show the ledger
 //   threads.mjs verdict <id-prefix> <v> [--commit sha] [--note text]
 //                                                         record a decision: fixed | rejected | caught | missed | deferred (new = undecided)
+//   threads.mjs verdict --batch <file.tsv>               many decisions at once: one per line, <id-prefix> TAB <v> [TAB commit [TAB note]]; all or none
 //   threads.mjs worksheet [--reports dir] [--all]         a retro worksheet: undecided or missed threads, each with the review-report entry near it
 //   threads.mjs cases --evals dir [--prefix p] [--group g] [--repo-dir d] [--tag] [--force]
 //                                                         eval cases from threads whose verdict is "fixed" (verified, and the fix landed)
@@ -142,7 +143,35 @@ function list() {
   console.log(`${rows.length} thread(s)`);
 }
 
+// Many decisions in one call (the triage skill uses it). Every line is checked before anything is written: one bad id or verdict stops the lot.
+function batchVerdicts(file) {
+  if (!fs.existsSync(file)) die(`no such file: ${file}`);
+  const ledger = loadLedger();
+  const rows = [];
+  fs.readFileSync(file, 'utf8').split(/\r?\n/).forEach((line, i) => {
+    if (!line.trim() || line.startsWith('#')) return;
+    const [prefix, v = '', commit = '', ...note] = line.split('\t');
+    if (!prefix.trim() || !VERDICTS.includes(v.trim())) die(`${file}:${i + 1}: need <id-prefix> TAB <${VERDICTS.join('|')}> [TAB commit [TAB note]]`);
+    rows.push({ id: resolveId(ledger, prefix.trim()), v: v.trim(), commit: commit.trim(), note: note.join('\t').trim() });
+  });
+  if (rows.length === 0) die(`${file}: no decisions in it`);
+  for (const r of rows) {
+    const e = ledger[r.id];
+    e.verdict = r.v;
+    e.decided = today;
+    if (r.commit && r.commit !== '-') e.fixed_in = r.commit;
+    if (r.note && r.note !== '-') e.note = r.note;
+  }
+  saveLedger(ledger);
+  for (const r of rows) {
+    const e = ledger[r.id];
+    console.log(`${short(r.id)} #${e.pr} ${e.path}:${e.line}: ${r.v}${e.fixed_in && r.commit && r.commit !== '-' ? ' in ' + e.fixed_in : ''}`);
+  }
+  console.log(`${rows.length} decision(s) recorded`);
+}
+
 function verdict() {
+  if (opt.batch && opt.batch !== true) return batchVerdicts(opt.batch);
   const [prefix, v] = pos;
   if (!prefix || !VERDICTS.includes(v)) die(`usage: threads.mjs verdict <id-prefix> <${VERDICTS.join('|')}> [--commit sha] [--note text]`);
   const ledger = loadLedger();

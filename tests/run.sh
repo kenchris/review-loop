@@ -202,6 +202,25 @@ if command -v node >/dev/null 2>&1; then
   expect "threads: a verdict needs a known value" 2 node "$thr/threads.mjs" verdict 1111 maybe
   expect "threads: record a verdict by a piece of the id" 0 node "$thr/threads.mjs" verdict 1111 fixed --commit "$B" --note "done"
   expect "threads: an ambiguous or unknown id is refused" 2 node "$thr/threads.mjs" verdict nothing-like-it fixed
+  printf '3333	rejected	-	not a bug here
+# a comment line
+1111	fixed	%s	done again
+' "$B" > "$tmp/batch.tsv"
+  expect "threads: a batch of verdicts is recorded" 0 node "$thr/threads.mjs" verdict --batch "$tmp/batch.tsv"
+  contains "threads: the batch says how many" "2 decision(s) recorded"
+  expect "threads: list by verdict shows the batch decision" 0 node "$thr/threads.mjs" list --verdict rejected
+  contains "threads: one thread was rejected by the batch" "1 thread(s)"
+  printf '1111	deferred
+nothing-like-it	fixed
+' > "$tmp/badbatch.tsv"
+  expect "threads: a batch with an unknown id is refused" 2 node "$thr/threads.mjs" verdict --batch "$tmp/badbatch.tsv"
+  expect "threads: and applied nothing" 0 node "$thr/threads.mjs" list --verdict deferred
+  contains "threads: no thread was deferred by the refused batch" "0 thread(s)"
+  printf '1111	maybe
+' > "$tmp/badbatch2.tsv"
+  expect "threads: a batch with an unknown verdict is refused" 2 node "$thr/threads.mjs" verdict --batch "$tmp/badbatch2.tsv"
+  printf '3333\tnew\n' > "$tmp/reset.tsv"
+  expect "threads: a batch can put a thread back to undecided (and leaves the other tests as they were)" 0 node "$thr/threads.mjs" verdict --batch "$tmp/reset.tsv"
   expect "threads: list by verdict" 0 node "$thr/threads.mjs" list --verdict fixed
   contains "threads: one fixed thread listed" "1 thread(s)"
   expect "threads: cases from verified threads" 0 node "$thr/threads.mjs" cases --evals "$tmp/ev" --repo-dir "$tmp" --prefix t-

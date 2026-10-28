@@ -6,6 +6,8 @@ This is the optional fourth level of review-loop. Use it once you get review com
 
 You review your change, then someone else reviews it and finds more. You fix those, and the next change gets the same kind of comment. The fixes never turn into anything that stops the next miss.
 
+If Copilot or a CI check reviews every push, this is sharper: you fix, you push, and the next round finds something else. It feels like a loop with no end. The way out is to learn from each round, so that the next push arrives with fewer findings. The number to watch is how many outside findings your own review had not already reported; `review-loop score show` records it per round.
+
 This level does three things:
 
 1. **Collects** the outside comments (GitHub review threads) in one place, so none is lost or handled twice.
@@ -20,8 +22,8 @@ It pays off after a few rounds. With one or two comments there is nothing to lea
           |  threads sync            (download + record)
           v
     ledger: one row per thread, "undecided"
-          |  threads worksheet       (what is undecided, with your own report next to it)
-          |  threads verdict ...     (you decide each one)
+          |  /triage                 (in the agent: a proposed verdict for each, you confirm once)
+          |  or by hand: threads worksheet + threads verdict
           v
     ledger: fixed / rejected / deferred ...
           |  /retro round N          (in the agent)
@@ -65,11 +67,16 @@ One row per undecided thread: the pull request, file and line, what the reviewer
 
 ### 3. Decide each thread (the verdict)
 
-A verdict is your decision about one thread, saved so it is never asked twice. Refer to a thread by the first characters of its id, as the worksheet shows it.
+A verdict is your decision about one thread, saved so it is never asked twice.
+
+**Let the agent do the reading: `/triage`.** It reads every undecided thread against the code the reviewer saw and the code now, proposes a verdict for each with a line of evidence (the fixing commit, the report entry, the reason the comment is wrong), and shows one table. You say "apply all" or name the ids to change; it records the confirmed ones in a single call (`review-loop threads verdict --batch`). Nothing is recorded that you did not confirm, nothing is posted to GitHub, no code is changed. Comments from people are marked as your judgement, and a thread it cannot confirm is left undecided. You start it yourself (`/triage`, or `/triage 123` for one pull request).
+
+**Or by hand.** Refer to a thread by the first characters of its id, as the worksheet shows it.
 
     review-loop threads verdict <id> fixed --commit <sha>
     review-loop threads verdict <id> rejected --note "the kind is read as a string first"
     review-loop threads verdict <id> deferred
+    review-loop threads verdict --batch decisions.tsv      many at once: id, verdict, commit, note, separated by tabs; all or none
 
 | Verdict | Use it when | What happens with it |
 |---|---|---|

@@ -8,7 +8,7 @@ argument-hint: "[PR number | branch | base..head | 'stack'] [multipass] [--fix]"
 
 A good reviewer reads every changed hunk with the code around it and reports one problem per comment, each saying what input or state makes it wrong. Most of what such a reviewer finds is not style: it is validation gaps, error paths that report success, state reset in one place and not another, and claims (comments, docs, tests) that the code does not back. This skill makes you do that pass first, and keeps it from running forever.
 
-If the repo has a `REVIEW.md`, read it first: what counts as a failure there, which paths guard something, what to ignore, its conventions, and the finding classes its reviewers have raised before. `references/classes.md` lists classes that recur across projects; use both as lenses.
+If the repo has a `REVIEW.md`, read it first (a repository can keep it outside the tree: `review-loop doctor` prints the path in use, see `docs/private-setup.md`): what counts as a failure there, which paths guard something, what to ignore, its conventions, and the finding classes its reviewers have raised before. `references/classes.md` lists classes that recur across projects; use both as lenses.
 
 ## 1. Scope
 
