@@ -319,5 +319,21 @@ REVIEW_GATE_FILE="$tmp/REVIEW.gate" expect "depth: a path pattern of REVIEW.gate
 contains "depth: from REVIEW.gate" "depth: multipass"
 expect "depth: a bad ref fails" 2 d nope HEAD
 
+# --- the skills themselves: what the Agent Skills specification and skill linters (such as waza's `check`) look at
+for sd in "$here"/skills/*/; do
+  s="$(basename "$sd")"; f="$sd/SKILL.md"
+  name="$(sed -n 's/^name: *//p' "$f" | head -1 | tr -d '')"
+  desc="$(sed -n 's/^description: *//p' "$f" | head -1 | tr -d '')"
+  if [ "$name" = "$s" ] && printf '%s' "$name" | grep -Eq '^[a-z0-9]+(-[a-z0-9]+)*$' && [ "${#name}" -le 64 ]; then pass; else fail "skill $s: name '$name' must be lowercase letters, digits and single hyphens, at most 64 characters, and equal the folder name"; fi
+  if [ -n "$desc" ] && [ "${#desc}" -le 1024 ]; then pass; else fail "skill $s: description must be 1 to 1024 characters (it is ${#desc})"; fi
+  if [ "$(wc -l < "$f" | tr -d ' ')" -le 500 ]; then pass; else fail "skill $s: SKILL.md is over 500 lines; move detail into references/"; fi
+  # every references/ or scripts/ file a skill names must exist inside that skill (a script of another skill is reached through the review-loop command)
+  missing=""
+  for m in $(grep -rhoE '(^|[^A-Za-z0-9_./-])(references|scripts)/[A-Za-z0-9_./-]+\.(md|sh|mjs)' "$sd" --include='*.md' | sed -E 's/^[^rs]*//' | sort -u); do
+    [ -e "$sd/$m" ] || missing="$missing $m"
+  done
+  if [ -z "$missing" ]; then pass; else fail "skill $s: names files that are not in the skill:$missing"; fi
+done
+
 echo "$passes passed, $fails failed"
 [ "$fails" -eq 0 ]

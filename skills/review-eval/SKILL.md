@@ -1,6 +1,7 @@
 ---
 name: review-eval
-description: Measure how well the self-review works, and whether a change to its lenses, prompts or model helped. Keeps a set of past findings as test cases, runs the reviewer blind on them, and records recall and noise. Use after outside review of a change, before and after editing the review skill, and every few rounds as a hold-out.
+description: Measure how well the self-review works, and whether a change to its lenses, prompts or model helped. Keeps a set of past findings as test cases, runs the reviewer blind on them, and records recall and noise. Use after outside review of a change, before and after editing the review skill, and every few rounds as a hold-out. Not for reviewing a change (use `pre-pr-review`) and not for deciding review threads (use `triage`).
+license: Apache-2.0
 argument-hint: "[new-case | run <case> | report | diff <runA> <runB>]"
 disable-model-invocation: true
 ---
