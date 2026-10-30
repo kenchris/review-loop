@@ -7,7 +7,7 @@ Skills for coding agents, for the review loop: check a change before it goes out
 | `pre-pr-review` | Reviews a branch or range through a fixed set of lenses and mechanical sweeps, verifies every finding before reporting it, and writes a report. Single pass for a small change, multi-pass (up to three readers) before handing something over, plus a spec-conformance reader when the change implements an external specification listed in `REVIEW.md`. |
 | `review-eval` | Keeps verified past findings as test cases, runs the reviewer blind on them, and records recall and noise, so a change to the lenses is kept only if it measurably helped. You invoke it yourself (`disable-model-invocation`): it spawns readers and costs allowance. |
 | `retro` | After a round of outside review, works out why each miss happened and proposes changes to the review setup, ranked by severity: a sweep or lint rule for what is mechanical, a `REVIEW.md` line only for judgement calls, deletion of lines that change nothing. You invoke it yourself; it proposes before it changes anything. |
-| `triage` | After `review-loop threads sync`, reads every undecided review thread (from Copilot, CI bots or people) against the code, proposes a verdict for each with the evidence, and records the ones you confirm in a single call: one confirmation for a round instead of one command per thread. You invoke it yourself; it never posts to GitHub or changes code. |
+| `triage` | After `review-loop threads sync`, reads every undecided review thread (from Copilot, CI bots or people) against the code, proposes a verdict for each with the evidence, and records the ones you confirm in a single call: one confirmation for a round instead of one command per thread. It records only what you confirm, and never posts to GitHub or changes code. |
 
 More are planned, see [PLAN.md](PLAN.md).
 
@@ -118,7 +118,7 @@ A repository can keep its review files elsewhere through `.review-loop.env` (see
 
 There are two kinds of thing to type, and they run in different places. **Slash commands** (`/pre-pr-review`, `/retro`, `/review-eval`) are typed to the agent: they start a skill, where the agent reads and reasons. **Terminal commands** (`review-loop ...`, `fetch-threads.bat`) are typed in a shell: they are plain scripts that make no model call, and the agent can run them for you if you ask ("run the gate for sched-7 to sched-9").
 
-`/retro`, `/triage` and `/review-eval` are user-invoked only (they spend allowance, and `retro` proposes changes to the review setup and `triage` writes decisions to the ledger), so in Claude Code type the slash command; the agent will not start them on its own. Asking in plain words ("run a retro on round 26 from the ledger") also works if the agent is told to follow the skill, but the slash form is the reliable one.
+`/retro` and `/review-eval` are user-invoked only (they spend allowance, and `retro` proposes changes to the review setup), so in Claude Code type the slash command; the agent will not start them on its own. `/triage` the agent may start itself, since it records nothing the owner has not confirmed. Asking in plain words ("run a retro on round 26 from the ledger") also works if the agent is told to follow the skill, but the slash form is the reliable one.
 
 | You want | Where | Type | What happens |
 |---|---|---|---|

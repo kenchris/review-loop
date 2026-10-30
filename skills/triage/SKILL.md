@@ -3,14 +3,13 @@ name: triage
 description: Decide the review threads of a round without doing it one thread at a time. Reads every undecided thread (from Copilot, CI bots or people) against the code, proposes a verdict for each with the evidence, and records the ones you confirm in a single call. Use after `review-loop threads sync`, before `/retro`, when a round has more undecided threads than you want to decide by hand. Not for reviewing a change (use `pre-pr-review`), and not for working out why a review missed something (use `retro`, after the threads are decided).
 license: Apache-2.0
 argument-hint: "[PR numbers]"
-disable-model-invocation: true
 ---
 
 # Triage
 
 A verdict is the owner's decision about one outside thread: fixed, wrong, already reported, real but not now. The ledger needs one for every thread before `/retro` can learn from the round, and deciding forty of them by hand is the part people skip. This skill does the reading and proposes; you confirm once; it records. Nothing is recorded that you did not confirm, and nothing is posted to GitHub.
 
-You start it yourself: it writes decisions to the ledger.
+You can start it, and so can the agent that fixed the round (it has read the code and the threads anyway). Either way it writes decisions to the ledger only after the owner has confirmed them in step 3: an agent never confirms for the owner.
 
 ## 1. Gather
 
