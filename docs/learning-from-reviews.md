@@ -59,6 +59,8 @@ Copy `threads.jsonl` over, then where the work is:
 
 (`--full` says the export is the complete set of open threads, so anything missing from it is marked gone.) That split is the only difference between `sync` and `fetch` plus `ingest`.
 
+Each time a new export arrives, `review-loop threads status threads.jsonl` does the ingest and answers "what is new?" in one go: the new threads (marked +) and everything still undecided, per pull request, plus how many are marked `missed`.
+
 ### 2. See what is undecided
 
     review-loop threads worksheet

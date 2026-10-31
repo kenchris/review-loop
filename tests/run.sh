@@ -185,6 +185,9 @@ if command -v node >/dev/null 2>&1; then
   if grep -q '"thread_id":"PRRT_abc123"' "$tmp/md.jsonl" && grep -q '"path":"src/a.cpp"' "$tmp/md.jsonl" && grep -q '"line":12' "$tmp/md.jsonl" && grep -q '"base_sha":"abc1234"' "$tmp/md.jsonl" && grep -q 'Second paragraph' "$tmp/md.jsonl" && grep -q '"repo":"o/r"' "$tmp/md.jsonl"; then pass; else fail "threads: import-md reads the thread id, path, last line, base from the table, the whole comment and the repo"; fi
   expect "threads: ingest" 0 node "$thr/threads.mjs" ingest "$tmp/t1.jsonl"
   contains "threads: two new threads" "2 new"
+  expect "threads: status ingests and lists what is undecided, per pull request" 0 node "$thr/threads.mjs" status "$tmp/t1.jsonl"
+  contains "threads: status groups by pull request" "#7:"
+  contains "threads: status says what to do next" "triage"
   expect "threads: ingesting the same export again adds nothing" 0 node "$thr/threads.mjs" ingest "$tmp/t1.jsonl"
   contains "threads: nothing new the second time" "0 new"
   rm -f "$THREADS_LEDGER"

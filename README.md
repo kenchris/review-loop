@@ -127,7 +127,7 @@ There are two kinds of thing to type, and they run in different places. **Slash 
 | Whether a change needs one reader or three | terminal | `review-loop depth <base> <tip>` | `single` or `multipass`, the reason and a model; a guard path is always multipass; no model |
 | The mechanical checks alone | terminal | `review-loop sweeps <base> <tip>` | the added lines run through the sweeps; each hit is a question; no model |
 | To check a hand-over is covered | terminal | `review-loop gate <base> <ref>` | fails unless a report with `Open: 0` covers every commit (and any required line); not a slash command, and it does not review anything: it checks that a review was written |
-| The threads of a round, and your decisions | terminal | `review-loop threads fetch / ingest / worksheet / verdict` | the export, the ledger and the worksheet (see below); no model |
+| The threads of a round, and your decisions | terminal | `review-loop threads fetch / ingest / status / worksheet / verdict` | the export, the ledger and the worksheet (see below); no model |
 | To decide a round's threads without one command each | agent | `/triage [PR numbers]` (after `threads sync`) | a proposed verdict per thread with the evidence; you confirm once; recorded with `review-loop threads verdict --batch`; nothing is posted or changed |
 | To learn from a round of outside review | agent | `/retro round 26` (after the threads steps below) | ranked proposals for the review setup; nothing is changed until you agree (`--apply` after) |
 | To measure the reviewer | agent | `/review-eval report`, `/review-eval run <case>` | recall and noise per run, from past findings as test cases |

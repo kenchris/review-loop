@@ -3,6 +3,7 @@
 //
 //   threads.mjs import-md <export.md> [--out f]           the older markdown export as threads.jsonl, so it can be ingested
 //   threads.mjs ingest <threads.jsonl>                    add new threads to the ledger, update the status of known ones, report what changed
+//   threads.mjs status <threads.jsonl>                    ingest, then say what is new and what is still undecided, per pull request
 //   threads.mjs list [--verdict v] [--pr n] [--status s]  show the ledger
 //   threads.mjs verdict <id-prefix> <v> [--commit sha] [--note text]
 //                                                         record a decision: fixed | rejected | caught | missed | deferred (new = undecided)
@@ -96,6 +97,33 @@ function ingest() {
   for (const c of changed) console.log('  changed: ' + c);
   const undecided = Object.values(ledger).filter((e) => e.verdict === 'new' && !e.gone).length;
   console.log(`ledger: ${Object.keys(ledger).length} thread(s), ${undecided} undecided (${ledgerPath})`);
+  return { added, ledger };
+}
+
+// ingest, then the answer to "what is new on GitHub since I last looked": the new threads, and every undecided one, per pull request.
+function status() {
+  const { added, ledger } = ingest();
+  const fresh = new Set(added);
+  const open = Object.entries(ledger).filter(([, e]) => e.verdict === 'new' && !e.gone);
+  const byPr = new Map();
+  for (const [id, e] of open) {
+    if (!byPr.has(e.pr)) byPr.set(e.pr, []);
+    byPr.get(e.pr).push([id, e]);
+  }
+  if (open.length === 0) {
+    console.log('nothing undecided');
+  } else {
+    for (const pr of [...byPr.keys()].sort((a, b) => a - b)) {
+      const rows = byPr.get(pr);
+      console.log(`#${pr}: ${rows.length} undecided, ${rows.filter(([id]) => fresh.has(id)).length} new`);
+      for (const [id, e] of rows) {
+        console.log(`  ${fresh.has(id) ? '+' : ' '} ${short(id)}  ${e.path || '(no file)'}:${e.line ?? ''}  ${e.author}  ${firstSentence(e.body, 90)}`);
+      }
+    }
+  }
+  const missed = Object.values(ledger).filter((e) => e.verdict === 'missed' && !e.gone).length;
+  if (missed) console.log(`${missed} thread(s) marked missed (real, not fixed yet): review-loop threads list --verdict missed`);
+  if (open.length) console.log('next: decide them, e.g. with the triage skill (/triage), which proposes a verdict for each and records only what you confirm');
 }
 
 // The markdown export of the older exporter (### F<n> - PR #<n> - title blocks, plus a table of pull requests) as threads.jsonl lines.
@@ -267,9 +295,10 @@ function cases() {
 switch (cmd) {
   case 'import-md': importMd(); break;
   case 'ingest': ingest(); break;
+  case 'status': status(); break;
   case 'list': list(); break;
   case 'verdict': verdict(); break;
   case 'worksheet': worksheet(); break;
   case 'cases': cases(); break;
-  default: die('usage: threads.mjs import-md|ingest|list|verdict|worksheet|cases ... (see the top of the file)');
+  default: die('usage: threads.mjs import-md|ingest|status|list|verdict|worksheet|cases ... (see the top of the file)');
 }
